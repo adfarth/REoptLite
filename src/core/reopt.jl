@@ -37,6 +37,12 @@ function run_reopt(REopt::JuMP.AbstractModel, fp::String)
 end
 
 
+function run_reopt(REopt::JuMP.AbstractModel, d::Dict)
+	s = Scenario(d)
+	run_reopt(REopt, REoptInputs(s))
+end
+
+
 """
 	function build_reopt!(m::JuMP.AbstractModel, fp::String
 		; lpf::Union{Nothing, JuMP.AbstractModel}=nothing
@@ -288,7 +294,9 @@ function run_reopt(m::JuMP.AbstractModel, p::REoptInputs; obj::Int=2)
 	end
 
 	@info "Model built. Optimizing..."
+	tstart = time()
 	optimize!(m)
+	time_elapsed = time() - tstart
 	if termination_status(m) == MOI.TIME_LIMIT
 		status = "timed-out"
     elseif termination_status(m) == MOI.OPTIMAL
@@ -297,6 +305,7 @@ function run_reopt(m::JuMP.AbstractModel, p::REoptInputs; obj::Int=2)
 		status = "not optimal"
 	end
 	@info "REopt solved with " termination_status(m)
+	@info "Solving took $(round(time_elapsed, digits=3)) seconds."
 
 	lcc = nothing
 	try
@@ -317,8 +326,11 @@ function run_reopt(m::JuMP.AbstractModel, p::REoptInputs; obj::Int=2)
 			"lcc" => lcc
 		)
 	end
-
+	
+	tstart = time()
 	results = reopt_results(m, p)
+	time_elapsed = time() - tstart
+	@info "Total results processing took $(round(time_elapsed, digits=3)) seconds."
 	results["status"] = status
 	results["inputs"] = p
 	results["lcc"] = lcc
@@ -328,6 +340,7 @@ end
 
 function reopt_results(m::JuMP.AbstractModel, p::REoptInputs)
 
+	tstart = time()
     @expression(m, Year1UtilityEnergy,  p.hours_per_timestep * sum(
 		m[:dvGridPurchase][ts] for ts in p.time_steps)
 	)
@@ -418,12 +431,23 @@ function reopt_results(m::JuMP.AbstractModel, p::REoptInputs)
 		results[string(t, "_net_fixed_om_costs")] = round(value(PVPerUnitSizeOMCosts) * (1 - p.owner_tax_pct), digits=0)
 	end
 	end
+	
+	time_elapsed = time() - tstart
+	@info "Base results processing took $(round(time_elapsed, digits=3)) seconds."
+	
+	tstart = time()
 	if !isempty(p.gentechs)
 		add_generator_results(m, p, results)
 	end
+	time_elapsed = time() - tstart
+	@info "Generator results processing took $(round(time_elapsed, digits=3)) seconds."
+	
+	tstart = time()
 	if !isempty(p.elecutil.outage_durations)
 		add_outage_results(m, p, results)
 	end
+	time_elapsed = time() - tstart
+	@info "Outage results processing took $(round(time_elapsed, digits=3)) seconds."
 	return results
 end
 
@@ -504,19 +528,19 @@ function add_generator_results(m, p, r::Dict)
 
 	generatorToBatt = @expression(m, [ts in p.time_steps],
 		sum(m[:dvProductionToStorage][b, t, ts] for b in p.storage.types, t in p.gentechs))
-	r["generatorToBatt"] = round.(value.(generatorToBatt), digits=3)
+	r["generatorToBatt"] = convert(Array, round.(value.(generatorToBatt), digits=3))
 
 	generatorToGrid = @expression(m, [ts in p.time_steps],
 		sum(m[:dvWHLexport][t, ts] + m[:dvNEMexport][t, ts] for t in p.gentechs)
 	)
-	r["generatorToGrid"] = round.(value.(generatorToGrid), digits=3)
+	r["generatorToGrid"] = convert(Array, round.(value.(generatorToGrid), digits=3))
 
 	generatorToLoad = @expression(m, [ts in p.time_steps],
 		sum(m[:dvRatedProduction][t, ts] * p.production_factor[t, ts] * p.levelization_factor[t]
 			for t in p.gentechs) -
 			generatorToBatt[ts] - generatorToGrid[ts]
 	)
-	r["generatorToLoad"] = round.(value.(generatorToLoad), digits=3)
+	r["generatorToLoad"] = convert(Array, round.(value.(generatorToLoad), digits=3))
 
     GeneratorFuelUsed = @expression(m, sum(m[:dvFuelUsage][t, ts] for t in p.gentechs, ts in p.time_steps))
 	r["fuel_used_gal"] = round(value(GeneratorFuelUsed), digits=2)
@@ -536,8 +560,15 @@ function add_generator_results(m, p, r::Dict)
 end
 
 function add_outage_results(m, p, r::Dict)
+	# TODO with many outages the dispatch arrays are so large that it can take hours to create them
+	# (eg. 8760 * 12 hour outages with PV, storage and diesel makes 7*12*8760 = 735,840 values)
+	# For now the outage dispatch outputs are not created (commented out below). Perhaps make a new
+	# function to optionally get the outage dispatch values so that we don't slow down returning the
+	# other results.
 	r["expected_outage_cost"] = value(m[:ExpectedOutageCost])
+	r["max_outage_cost_per_outage_duration"] = value.(m[:dvMaxOutageCost]).data
 	r["total_unserved_load"] = 0
+<<<<<<< HEAD
 	for s in p.elecutil.scenarios
 		r["total_unserved_load"] += sum(value.(m[:dvUnservedLoad])[s, tz, ts]
 			for tz in p.elecutil.outage_start_timesteps,
@@ -545,11 +576,79 @@ function add_outage_results(m, p, r::Dict)
 		) # need the ts in 1:p.elecutil.outage_durations[s] b/c dvUnservedLoad has unused values in third dimension
 	end
 	r["total_unserved_load"] = round(r["total_unserved_load"], digits=2)
+=======
+	r["dvUnservedLoad"] = value.(m[:dvUnservedLoad]).data
+	r["mg_storage_upgrade_cost"] = value(m[:dvMGStorageUpgradeCost])
+	# r["dvMGDischargeFromStorage"] = value.(m[:dvMGDischargeFromStorage]).data
+>>>>>>> 1bd997c8b250d92c1af946c488b8c6d69d566199
 
 	if !isempty(p.pvtechs)
 		for t in p.pvtechs
-			# TODO add microgrid dispatch results as well as other MG results
+
 			r[string(t, "mg_kw")] = round(value(m[:dvMGsize][t]), digits=4)
+			r[string("mg_", t, "_upgrade_cost")] = round(value(m[:dvMGTechUpgradeCost][t]), digits=2)
+
+			# if !isempty(p.storage.types)
+			# 	PVtoBatt = (m[:dvMGProductionToStorage][t, s, tz, ts] for 
+			# 		s in p.elecutil.scenarios,
+			# 		tz in p.elecutil.outage_start_timesteps,
+			# 		ts in p.elecutil.outage_timesteps)
+			# else
+			# 	PVtoBatt = []
+			# end
+			# r[string("mg", t, "toBatt")] = convert(Array, round.(value.(PVtoBatt), digits=3))
+
+			# PVtoCUR = (m[:dvMGCurtail][t, s, tz, ts] for 
+			# 	s in p.elecutil.scenarios,
+			# 	tz in p.elecutil.outage_start_timesteps,
+			# 	ts in p.elecutil.outage_timesteps)
+			# r[string("mg", t, "toCurtail")] = convert(Array, round.(value.(PVtoCUR), digits=3))
+
+			# PVtoLoad = (
+			# 	m[:dvMGRatedProduction][t, s, tz, ts] * p.production_factor[t, tz+ts] 
+			# 			* p.levelization_factor[t]
+			# 	- m[:dvMGCurtail][t, s, tz, ts]
+			# 	- m[:dvMGProductionToStorage][t, s, tz, ts] for 
+			# 		s in p.elecutil.scenarios,
+			# 		tz in p.elecutil.outage_start_timesteps,
+			# 		ts in p.elecutil.outage_timesteps
+			# )
+			# r[string("mg", t, "toLoad")] = convert(Array, round.(value.(PVtoLoad), digits=3))
+		end
+	end
+
+	if !isempty(p.gentechs)
+		for t in p.gentechs
+			r[string(t, "_mg_kw")] = round(value(m[:dvMGsize][t]), digits=4)
+			r[string("mg_", t, "_fuel_used")] = value.(m[:dvMGFuelUsed][t, :, :]).data
+			r[string("mg_", t, "_upgrade_cost")] = round(value(m[:dvMGTechUpgradeCost][t]), digits=2)
+
+			# if !isempty(p.storage.types)
+			# 	GenToBatt = (m[:dvMGProductionToStorage][t, s, tz, ts] for 
+			# 		s in p.elecutil.scenarios,
+			# 		tz in p.elecutil.outage_start_timesteps,
+			# 		ts in p.elecutil.outage_timesteps)
+			# else
+			# 	GenToBatt = []
+			# end
+			# r[string("mg", t, "toBatt")] = convert(Array, round.(value.(GenToBatt), digits=3))
+
+			# GENtoCUR = (m[:dvMGCurtail][t, s, tz, ts] for 
+			# 	s in p.elecutil.scenarios,
+			# 	tz in p.elecutil.outage_start_timesteps,
+			# 	ts in p.elecutil.outage_timesteps)
+			# r[string("mg", t, "toCurtail")] = convert(Array, round.(value.(GENtoCUR), digits=3))
+
+			# GENtoLoad = (
+			# 	m[:dvMGRatedProduction][t, s, tz, ts] * p.production_factor[t, tz+ts] 
+			# 			* p.levelization_factor[t]
+			# 	- m[:dvMGCurtail][t, s, tz, ts]
+			# 	- m[:dvMGProductionToStorage][t, s, tz, ts] for 
+			# 		s in p.elecutil.scenarios,
+			# 		tz in p.elecutil.outage_start_timesteps,
+			# 		ts in p.elecutil.outage_timesteps
+			# )
+			# r[string("mg", t, "toLoad")] = convert(Array, round.(value.(GENtoLoad), digits=3))
 		end
 	end
 
