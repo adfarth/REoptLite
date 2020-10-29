@@ -326,7 +326,7 @@ function run_reopt(m::JuMP.AbstractModel, p::REoptInputs; obj::Int=2)
 			"lcc" => lcc
 		)
 	end
-	
+
 	tstart = time()
 	results = reopt_results(m, p)
 	time_elapsed = time() - tstart
@@ -431,17 +431,17 @@ function reopt_results(m::JuMP.AbstractModel, p::REoptInputs)
 		results[string(t, "_net_fixed_om_costs")] = round(value(PVPerUnitSizeOMCosts) * (1 - p.owner_tax_pct), digits=0)
 	end
 	end
-	
+
 	time_elapsed = time() - tstart
 	@info "Base results processing took $(round(time_elapsed, digits=3)) seconds."
-	
+
 	tstart = time()
 	if !isempty(p.gentechs)
 		add_generator_results(m, p, results)
 	end
 	time_elapsed = time() - tstart
 	@info "Generator results processing took $(round(time_elapsed, digits=3)) seconds."
-	
+
 	tstart = time()
 	if !isempty(p.elecutil.outage_durations)
 		add_outage_results(m, p, results)
@@ -568,22 +568,9 @@ function add_outage_results(m, p, r::Dict)
 	r["expected_outage_cost"] = value(m[:ExpectedOutageCost])
 	r["max_outage_cost_per_outage_duration"] = value.(m[:dvMaxOutageCost]).data
 	r["total_unserved_load"] = 0
-<<<<<<< HEAD
-	for s in p.elecutil.scenarios
-		r["total_unserved_load"] += sum(value.(m[:dvUnservedLoad])[s, tz, ts]
-			for tz in p.elecutil.outage_start_timesteps,
-				ts in 1:p.elecutil.outage_durations[s]
-		) # need the ts in 1:p.elecutil.outage_durations[s] b/c dvUnservedLoad has unused values in third dimension
-	end
-	r["total_unserved_load"] = round(r["total_unserved_load"], digits=2)
-<<<<<<< HEAD
-=======
-=======
 	r["dvUnservedLoad"] = value.(m[:dvUnservedLoad]).data
 	r["mg_storage_upgrade_cost"] = value(m[:dvMGStorageUpgradeCost])
 	# r["dvMGDischargeFromStorage"] = value.(m[:dvMGDischargeFromStorage]).data
->>>>>>> 1bd997c8b250d92c1af946c488b8c6d69d566199
->>>>>>> 06b0e9ae2d24a1c18bf2d45478779b4b8fe6c961
 
 	if !isempty(p.pvtechs)
 		for t in p.pvtechs
@@ -592,7 +579,7 @@ function add_outage_results(m, p, r::Dict)
 			r[string("mg_", t, "_upgrade_cost")] = round(value(m[:dvMGTechUpgradeCost][t]), digits=2)
 
 			# if !isempty(p.storage.types)
-			# 	PVtoBatt = (m[:dvMGProductionToStorage][t, s, tz, ts] for 
+			# 	PVtoBatt = (m[:dvMGProductionToStorage][t, s, tz, ts] for
 			# 		s in p.elecutil.scenarios,
 			# 		tz in p.elecutil.outage_start_timesteps,
 			# 		ts in p.elecutil.outage_timesteps)
@@ -601,17 +588,17 @@ function add_outage_results(m, p, r::Dict)
 			# end
 			# r[string("mg", t, "toBatt")] = convert(Array, round.(value.(PVtoBatt), digits=3))
 
-			# PVtoCUR = (m[:dvMGCurtail][t, s, tz, ts] for 
+			# PVtoCUR = (m[:dvMGCurtail][t, s, tz, ts] for
 			# 	s in p.elecutil.scenarios,
 			# 	tz in p.elecutil.outage_start_timesteps,
 			# 	ts in p.elecutil.outage_timesteps)
 			# r[string("mg", t, "toCurtail")] = convert(Array, round.(value.(PVtoCUR), digits=3))
 
 			# PVtoLoad = (
-			# 	m[:dvMGRatedProduction][t, s, tz, ts] * p.production_factor[t, tz+ts] 
+			# 	m[:dvMGRatedProduction][t, s, tz, ts] * p.production_factor[t, tz+ts]
 			# 			* p.levelization_factor[t]
 			# 	- m[:dvMGCurtail][t, s, tz, ts]
-			# 	- m[:dvMGProductionToStorage][t, s, tz, ts] for 
+			# 	- m[:dvMGProductionToStorage][t, s, tz, ts] for
 			# 		s in p.elecutil.scenarios,
 			# 		tz in p.elecutil.outage_start_timesteps,
 			# 		ts in p.elecutil.outage_timesteps
@@ -627,7 +614,7 @@ function add_outage_results(m, p, r::Dict)
 			r[string("mg_", t, "_upgrade_cost")] = round(value(m[:dvMGTechUpgradeCost][t]), digits=2)
 
 			# if !isempty(p.storage.types)
-			# 	GenToBatt = (m[:dvMGProductionToStorage][t, s, tz, ts] for 
+			# 	GenToBatt = (m[:dvMGProductionToStorage][t, s, tz, ts] for
 			# 		s in p.elecutil.scenarios,
 			# 		tz in p.elecutil.outage_start_timesteps,
 			# 		ts in p.elecutil.outage_timesteps)
@@ -636,17 +623,17 @@ function add_outage_results(m, p, r::Dict)
 			# end
 			# r[string("mg", t, "toBatt")] = convert(Array, round.(value.(GenToBatt), digits=3))
 
-			# GENtoCUR = (m[:dvMGCurtail][t, s, tz, ts] for 
+			# GENtoCUR = (m[:dvMGCurtail][t, s, tz, ts] for
 			# 	s in p.elecutil.scenarios,
 			# 	tz in p.elecutil.outage_start_timesteps,
 			# 	ts in p.elecutil.outage_timesteps)
 			# r[string("mg", t, "toCurtail")] = convert(Array, round.(value.(GENtoCUR), digits=3))
 
 			# GENtoLoad = (
-			# 	m[:dvMGRatedProduction][t, s, tz, ts] * p.production_factor[t, tz+ts] 
+			# 	m[:dvMGRatedProduction][t, s, tz, ts] * p.production_factor[t, tz+ts]
 			# 			* p.levelization_factor[t]
 			# 	- m[:dvMGCurtail][t, s, tz, ts]
-			# 	- m[:dvMGProductionToStorage][t, s, tz, ts] for 
+			# 	- m[:dvMGProductionToStorage][t, s, tz, ts] for
 			# 		s in p.elecutil.scenarios,
 			# 		tz in p.elecutil.outage_start_timesteps,
 			# 		ts in p.elecutil.outage_timesteps
