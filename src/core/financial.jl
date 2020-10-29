@@ -40,4 +40,12 @@ Base.@kwdef struct Financial
     macrs_seven_year::Array{Float64,1} = [0.1429, 0.2449, 0.1749, 0.1249, 0.0893, 0.0892, 0.0893, 0.0446]
     VoLL::Union{Array{Real,1}, Real} = 1.00
     microgrid_premium_pct::Float64 = 0.3
+
+    ## CO2 impacts (ADF)
+    tonCO2_kw::Float64 = 0.00  # Regional emissions factor from EPA AVERT [annual avoided tons CO2 per kW solar PV]
+    # Cost of carbon in 2019$
+    # default of 30 zeros, but only first i in 1:analysis_years used in reopt.jl
+    cost_tonCO2::Array{Real,1} = [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00]
+    ## Health impacts (ADF)
+    health_cost_kwh::Float64 = 0.00 # Regional benefit (negative cost) per kWh from EPA https://www.epa.gov/statelocalenergy/estimating-health-benefits-kilowatt-hour-energy-efficiency-and-renewable-energy#Screening-level%20regional%20estimates
 end

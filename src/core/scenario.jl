@@ -41,9 +41,9 @@ end
 
 function Scenario(d::Dict)
     # TODO add validate! functions for each input struct
-    
+
     site = Site(;dictkeys_tosymbols(d["Site"])...)
-    
+
     pvs = PV[]
     if haskey(d, "PV")
         if typeof(d["PV"]) <: AbstractArray
@@ -85,7 +85,7 @@ function Scenario(d::Dict)
 
     electric_load = ElectricLoad(; dictkeys_tosymbols(d["ElectricLoad"])...)
 
-    electric_tariff = ElectricTariff(; dictkeys_tosymbols(d["ElectricTariff"])..., 
+    electric_tariff = ElectricTariff(; dictkeys_tosymbols(d["ElectricTariff"])...,
                                        year=electric_load.year
                                     )
 
@@ -96,12 +96,12 @@ function Scenario(d::Dict)
     end
 
     return Scenario(
-        site, 
-        pvs, 
-        storage, 
-        electric_tariff, 
-        electric_load, 
-        electric_utility, 
+        site,
+        pvs,
+        storage,
+        electric_tariff,
+        electric_load,
+        electric_utility,
         financial,
         generator
     )
