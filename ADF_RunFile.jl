@@ -1,5 +1,3 @@
-test
-
 using CPLEX
 using JuMP
 # using Revise
