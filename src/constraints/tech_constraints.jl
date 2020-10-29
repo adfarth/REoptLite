@@ -30,11 +30,13 @@
 function add_tech_size_constraints(m, p)
 
     # PV techs can be constrained by space available based on location at site (roof, ground, both)
+    ## Upper bound on dvSize (ADF)
     @constraint(m, [loc in p.pvlocations],
         sum(m[:dvSize][t] * p.pv_to_location[t, loc] for t in p.pvtechs) <= p.maxsize_pv_locations[loc]
     )
 
     # max size limit
+    ## Also upper bound on dvSize? (ADF)
     @constraint(m, [t in p.techs],
         m[:dvSize][t] <= p.max_sizes[t]
     )
@@ -44,8 +46,14 @@ function add_tech_size_constraints(m, p)
         m[:dvSize][t] >= p.min_sizes[t]
     )
 
+    # Lower bound on dvPurchaseSize
     @constraint(m, [t in p.techs],
         m[:dvPurchaseSize][t] >= m[:dvSize][t] - p.existing_sizes[t]
+    )
+
+    # Upper bound on dvPurchaseSize (ADF added this)
+    @constraint(m, [t in p.techs],
+        m[:dvPurchaseSize][t] <= m[:dvSize][t] - p.existing_sizes[t]
     )
 
     ## Constraint (7d): Non-turndown technologies are always at rated production

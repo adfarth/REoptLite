@@ -102,8 +102,8 @@ function Storage(d::Dict, f::Financial)  # nested dict
     end
 
     storage_args = Dict(
-        :types => types, 
-        :can_grid_charge => can_grid_charge, 
+        :types => types,
+        :can_grid_charge => can_grid_charge,
         :export_bins => export_bins
     )
     d2 = Dict()  # Julia won't let me use storage_args: "unable to check bounds for indices of type Symbol"

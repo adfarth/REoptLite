@@ -133,16 +133,34 @@ function build_reopt!(m::JuMP.AbstractModel, p::REoptInputs)
 	@expression(m, TotalTechCapCosts, p.two_party_factor *
 		sum( p.cap_cost_slope[t] * m[:dvPurchaseSize][t] for t in p.techs )  # TODO add Yintercept and binary
 	)
-	
+
 	@expression(m, TotalStorageCapCosts, p.two_party_factor *
 		sum(  p.storage.cost_per_kw[b] * m[:dvStoragePower][b]
 			+ p.storage.cost_per_kwh[b] * m[:dvStorageEnergy][b] for b in p.storage.types )
 	)
-	
+
 	@expression(m, TotalPerUnitSizeOMCosts, p.two_party_factor * p.pwf_om *
 		sum( p.om_cost_per_kw[t] * m[:dvSize][t] for t in p.techs )
 	)
-	
+
+	# ADF
+	if !isempty(p.pvtechs)
+		## Lifetime avoided social CO2 cost from new solar (compared to baseline) (ADF)
+		## Cost_CO2 = sum over years(Cost/ton (indexed on yrs) * ton/kw/yr * kw )
+		## TODO: include degradation
+		@expression(m, TotalCO2Cost, sum(p.cost_tonCO2[i] * p.tonCO2_kw *
+			sum( m[:dvPurchaseSize][t] for t in p.pvtechs ) for i in 1:p.analysis_years)
+		)
+
+		# Lifetime avoided negative health impacts from new solar (compared to baseline) (ADF)
+		## Cost_health = HealthBen/kWh * sum(year1PVProd * (1-deg)^(yr-1))
+		## Year1PVProduction = (sum(m[:dvRatedProduction][t,ts] * p.production_factor[t, ts] for ts in p.time_steps) * p.hours_per_timestep)
+		@expression(m, TotalHealthCost, p.health_cost_kwh * p.hours_per_timestep *
+			sum(m[:dvRatedProduction][t,ts] * p.production_factor[t, ts] * (1-p.degradation_pcts[t])^(i-1)
+			for i in 1:p.analysis_years, t in p.pvtechs, ts in p.time_steps)
+		)
+	end
+
     if !isempty(p.gentechs)
 		m[:TotalPerUnitProdOMCosts] = @expression(m, p.two_party_factor * p.pwf_om *
 			sum(p.generator.om_cost_per_kwh * p.hours_per_timestep *
@@ -177,7 +195,7 @@ function build_reopt!(m::JuMP.AbstractModel, p::REoptInputs)
 		add_MG_storage_dispatch_constraints(m,p)
 		add_cannot_have_MG_with_only_PVwind_constraints(m,p)
 		add_MG_size_constraints(m,p)
-		
+
 		if !isempty(p.gentechs)
 			add_MG_fuel_burn_constraints(m,p)
 			add_binMGGenIsOnInTS_constraints(m,p)
@@ -188,7 +206,7 @@ function build_reopt!(m::JuMP.AbstractModel, p::REoptInputs)
 				m[:binMGGenIsOnInTS][s, tz, ts] == 0
 			)
 		end
-		
+
 		if p.min_resil_timesteps > 0
 			add_min_hours_crit_ld_met_constraint(m,p)
 		end
@@ -240,7 +258,13 @@ function build_reopt!(m::JuMP.AbstractModel, p::REoptInputs)
         m[:TotalGenFuelCharges] * (1 - p.offtaker_tax_pct) +
 
 		# Utility Bill, tax deductible for offtaker
-		(TotalEnergyChargesUtil + TotalDemandCharges + TotalExportBenefit + TotalFixedCharges + 0.999 * m[:MinChargeAdder]) * (1 - p.offtaker_tax_pct)
+		(TotalEnergyChargesUtil + TotalDemandCharges + TotalExportBenefit + TotalFixedCharges + 0.999 * m[:MinChargeAdder]) * (1 - p.offtaker_tax_pct) +
+
+		## Cost of change in carbon dioxide emissions from new PV (ADF)
+		TotalCO2Cost +
+
+		## Cost (or benefit) of change in health impacts (ADF)
+		TotalHealthCost
 	);
 	if !isempty(p.elecutil.outage_durations)
 		add_to_expression!(Costs, m[:ExpectedOutageCost] + m[:mgTotalTechUpgradeCost] + m[:dvMGStorageUpgradeCost] + m[:ExpectedMGFuelCost])
@@ -248,6 +272,7 @@ function build_reopt!(m::JuMP.AbstractModel, p::REoptInputs)
     #= Note: 0.9999*MinChargeAdder in Objective b/c when TotalMinCharge > (TotalEnergyCharges + TotalDemandCharges + TotalExportBenefit + TotalFixedCharges)
 		it is arbitrary where the min charge ends up (eg. could be in TotalDemandCharges or MinChargeAdder).
 		0.0001*MinChargeAdder is added back into LCC when writing to results.  =#
+
 	nothing
 end
 
@@ -275,7 +300,16 @@ function run_reopt(m::JuMP.AbstractModel, p::REoptInputs; obj::Int=2)
 
 	lcc = nothing
 	try
-		lcc = round(JuMP.objective_value(m)+ 0.0001*value(m[:MinChargeAdder]))
+	## Start ADF's addition to report true lcc
+		if obj == 1
+			lcc = round(JuMP.objective_value(m)+ 0.0001*value(m[:MinChargeAdder]))
+		elseif obj == 2  # add back out the SOC incentive to get true lcc
+			SOCvar = value(sum(m[:dvStoredEnergy][:elec, ts] for ts in p.time_steps)/8760.)
+			lcc = round(JuMP.objective_value(m)+ 0.0001*value(m[:MinChargeAdder]) + SOCvar)
+		end
+	## End ADf's addition
+		# The code block above replaces the line below (ADF)
+		# lcc = round(JuMP.objective_value(m)+ 0.0001*value(m[:MinChargeAdder]))
 	catch
 		return Dict(
 			"status" => status,
@@ -340,6 +374,12 @@ function reopt_results(m::JuMP.AbstractModel, p::REoptInputs)
 
 	GridToLoad = (m[:dvGridPurchase][ts] - sum(m[:dvGridToStorage][b, ts] for b in p.storage.types) for ts in p.time_steps)
     results["GridToLoad"] = convert(Array, round.(value.(GridToLoad), digits=3))
+
+	## Report CO2 results (ADF)
+	results["Total_CO2Cost"] = round(value(m[:TotalCO2Cost]), digits=3)
+
+	## Report Health resutls (ADF)
+	results["Total_HealthCost"] = round(value(m[:TotalHealthCost]), digits=3)
 
 	if !isempty(p.pvtechs)
     for t in p.pvtechs
@@ -432,7 +472,7 @@ function add_variables!(m::JuMP.AbstractModel, p::REoptInputs)
 			dvMGTechUpgradeCost[p.techs] >= 0
 			dvMGStorageUpgradeCost >= 0
 			dvMGsize[p.techs] >= 0
-			
+
 			dvMGFuelUsed[p.techs, S, tZeros] >= 0
 			dvMGMaxFuelUsage[S] >= 0
 			dvMGMaxFuelCost[S] >= 0
@@ -500,16 +540,23 @@ function add_outage_results(m, p, r::Dict)
 	r["total_unserved_load"] = 0
 	for s in p.elecutil.scenarios
 		r["total_unserved_load"] += sum(value.(m[:dvUnservedLoad])[s, tz, ts]
-			for tz in p.elecutil.outage_start_timesteps, 
+			for tz in p.elecutil.outage_start_timesteps,
 				ts in 1:p.elecutil.outage_durations[s]
 		) # need the ts in 1:p.elecutil.outage_durations[s] b/c dvUnservedLoad has unused values in third dimension
 	end
 	r["total_unserved_load"] = round(r["total_unserved_load"], digits=2)
-	
+
 	if !isempty(p.pvtechs)
 		for t in p.pvtechs
 			# TODO add microgrid dispatch results as well as other MG results
 			r[string(t, "mg_kw")] = round(value(m[:dvMGsize][t]), digits=4)
 		end
+	end
+
+	## Adding microcgrid cost results (ADF)
+	if !isempty(p.elecutil.outage_durations)
+		r["mgTotalTechUpgradeCost"] = round(value(m[:mgTotalTechUpgradeCost]), digits=4)
+		r["dvMGStorageUpgradeCost"] = round(value(m[:dvMGStorageUpgradeCost]), digits=4)
+		r["ExpectedMGFuelCost"] = round(value(m[:ExpectedMGFuelCost]), digits=4)
 	end
 end

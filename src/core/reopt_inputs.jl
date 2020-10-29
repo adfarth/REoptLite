@@ -70,6 +70,12 @@ struct REoptInputs
     elecutil::ElectricUtility
     min_resil_timesteps::Int
     mg_tech_sizes_equal_grid_sizes::Bool
+
+    tonCO2_kw::Float64 # tons CO2 avoided per kw solar PV (ADF)
+    cost_tonCO2::Array{Real,1} # social cost of carbon per year (already discounted)
+    analysis_years::Int # (ADF)
+    degradation_pcts::DenseAxisArray{Float64, 1}  # (techs) # (ADF)
+    health_cost_kwh::Float64 # BPK values (ADF)
 end
 
 function REoptInputs(fp::String)
@@ -81,8 +87,9 @@ function REoptInputs(s::Scenario)
 
     time_steps = 1:length(s.electric_load.loads_kw)
     hours_per_timestep = 8760.0 / length(s.electric_load.loads_kw)
+    ##  ADF added degradation_pcts
     techs, pvtechs, gentechs, pv_to_location, maxsize_pv_locations, pvlocations, production_factor,
-        max_sizes, min_sizes, existing_sizes, cap_cost_slope, om_cost_per_kw  = setup_tech_inputs(s)
+        max_sizes, min_sizes, existing_sizes, cap_cost_slope, om_cost_per_kw, degradation_pcts  = setup_tech_inputs(s)
     elec_techs = techs  # only modeling electric loads/techs so far
     techs_no_turndown = pvtechs
 
@@ -101,7 +108,7 @@ function REoptInputs(s::Scenario)
     # levelization_factor = DenseAxisArray([0.9539], techs)
     # levelization_factor = DenseAxisArray([0.9539, 1.0], techs)  # w/generator
     time_steps_with_grid, time_steps_without_grid, = setup_electric_utility_inputs(s)
-    
+
     if any(pv.existing_kw > 0 for pv in s.pvs)
         adjust_load_profile(s, production_factor)
     end
@@ -143,7 +150,15 @@ function REoptInputs(s::Scenario)
         s.generator,
         s.electric_utility,
         s.site.min_resil_timesteps,
-        s.site.mg_tech_sizes_equal_grid_sizes
+        s.site.mg_tech_sizes_equal_grid_sizes,
+        ## CO2 impacts (ADF)
+        s.financial.tonCO2_kw,
+        s.financial.cost_tonCO2,
+        # Other (ADF)
+        s.financial.analysis_years,
+        degradation_pcts,
+        # Health impacts (ADF)
+        s.financial.health_cost_kwh
     )
 end
 
@@ -176,10 +191,11 @@ function setup_tech_inputs(s::Scenario)
     pv_to_location = DenseAxisArray{Int}(undef, pvtechs, pvlocations)
     maxsize_pv_locations = DenseAxisArray([1.0e5, 1.0e5, 1.0e5], pvlocations)
     # default to large max size per location. Max size by roof, ground, both
+    degradation_pcts = DenseAxisArray{Float64}(undef, pvtechs) # ADF
 
     if !isempty(pvtechs)
         setup_pv_inputs(s, max_sizes, min_sizes, existing_sizes, cap_cost_slope, om_cost_per_kw, production_factor,
-                        pvlocations, pv_to_location, maxsize_pv_locations)
+                        pvlocations, pv_to_location, maxsize_pv_locations, degradation_pcts) # ADF added degradation_pcts
     end
 
     if "Generator" in techs
@@ -187,13 +203,13 @@ function setup_tech_inputs(s::Scenario)
     end
 
     return techs, pvtechs, gentechs, pv_to_location, maxsize_pv_locations, pvlocations, production_factor,
-    max_sizes, min_sizes, existing_sizes, cap_cost_slope, om_cost_per_kw
+    max_sizes, min_sizes, existing_sizes, cap_cost_slope, om_cost_per_kw, degradation_pcts # ADF added degradation_pcts
 end
 
 
 function setup_pv_inputs(s::Scenario, max_sizes, min_sizes,
     existing_sizes, cap_cost_slope, om_cost_per_kw, production_factor,
-    pvlocations, pv_to_location, maxsize_pv_locations)
+    pvlocations, pv_to_location, maxsize_pv_locations, degradation_pcts) # ADF added degradation_pcts
 
     time_steps = 1:length(s.electric_load.loads_kw)
 
@@ -242,6 +258,7 @@ function setup_pv_inputs(s::Scenario, max_sizes, min_sizes,
         existing_sizes[pv.name] = pv.existing_kw
         min_sizes[pv.name] = pv.existing_kw + pv.min_kw
         max_sizes[pv.name] = pv.existing_kw + beyond_existing_kw
+        degradation_pcts[pv.name] = pv.degradation_pct # ADF
 
         cap_cost_slope[pv.name] = effective_cost(;
             itc_basis=pv.cost_per_kw,
@@ -255,7 +272,7 @@ function setup_pv_inputs(s::Scenario, max_sizes, min_sizes,
             macrs_itc_reduction = pv.macrs_itc_reduction,
             rebate_per_kw = pv.total_rebate_per_kw
         )
-        
+
         om_cost_per_kw[pv.name] = pv.om_cost_per_kw
     end
 
@@ -355,7 +372,7 @@ function adjust_load_profile(s::Scenario, production_factor::DenseAxisArray)
             s.electric_load.loads_kw .+= pv.existing_kw * production_factor[pv.name, :]
         end end
     end
-    
+
     if s.electric_load.critical_loads_kw_is_net
         for pv in s.pvs if pv.existing_kw > 0
             s.electric_load.critical_loads_kw .+= pv.existing_kw * production_factor[pv.name, :]

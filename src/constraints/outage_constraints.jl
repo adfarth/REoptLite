@@ -65,7 +65,7 @@ function add_outage_cost_constraints(m,p)
     @constraint(m,
         m[:binMGStorageUsed] => {m[:dvMGStorageUpgradeCost] >= p.microgrid_premium_pct * m[:TotalStorageCapCosts]}
     )
-    
+
     @expression(m, mgTotalTechUpgradeCost,
         sum( m[:dvMGTechUpgradeCost][t] for t in p.techs )
     )
@@ -80,7 +80,7 @@ function add_MG_size_constraints(m,p)
     @constraint(m, [b in p.storage.types],
         m[:binMGStorageUsed] => {m[:dvStoragePower][b] >= 1.0} # 1 kW min size to prevent binaryMGStorageUsed = 1 with zero cost
     )
-    
+
     if p.mg_tech_sizes_equal_grid_sizes
         @constraint(m, [t in p.techs],
             m[:dvMGsize][t] == m[:dvSize][t]
@@ -102,19 +102,19 @@ function add_MG_production_constraints(m,p)
     )
 
     if !isempty(p.gentechs)
-        @constraint(m, [t in p.gentechs, s in p.elecutil.scenarios, tz in p.elecutil.outage_start_timesteps, ts in p.elecutil.outage_timesteps], 
+        @constraint(m, [t in p.gentechs, s in p.elecutil.scenarios, tz in p.elecutil.outage_start_timesteps, ts in p.elecutil.outage_timesteps],
             m[:dvMGRatedProduction][t, s, tz, ts] in MOI.Semicontinuous(p.generator.min_turn_down_pct, p.max_sizes[t])
         )
         other_techs = setdiff(p.techs, p.gentechs)
-        @constraint(m, [t in other_techs, s in p.elecutil.scenarios, tz in p.elecutil.outage_start_timesteps, ts in p.elecutil.outage_timesteps], 
+        @constraint(m, [t in other_techs, s in p.elecutil.scenarios, tz in p.elecutil.outage_start_timesteps, ts in p.elecutil.outage_timesteps],
             m[:dvMGRatedProduction][t, s, tz, ts] >= 0
         )
     else
-        @constraint(m, [t in p.techs, s in p.elecutil.scenarios, tz in p.elecutil.outage_start_timesteps, ts in p.elecutil.outage_timesteps], 
+        @constraint(m, [t in p.techs, s in p.elecutil.scenarios, tz in p.elecutil.outage_start_timesteps, ts in p.elecutil.outage_timesteps],
             m[:dvMGRatedProduction][t, s, tz, ts] >= 0
         )
     end
-    
+
     @constraint(m, [t in p.techs, s in p.elecutil.scenarios, tz in p.elecutil.outage_start_timesteps, ts in p.elecutil.outage_timesteps],
         m[:dvMGRatedProduction][t, s, tz, ts] <= m[:dvMGsize][t]
     )
@@ -126,7 +126,7 @@ function add_MG_fuel_burn_constraints(m,p)
     @constraint(m, [t in p.gentechs, s in p.elecutil.scenarios, tz in p.elecutil.outage_start_timesteps],
         m[:dvMGFuelUsed][t, s, tz] == p.generator.fuel_slope_gal_per_kwh * p.hours_per_timestep * p.levelization_factor[t] *
         sum( p.production_factor[t, tz+ts] * m[:dvMGRatedProduction][t, s, tz, ts] for ts in 1:p.elecutil.outage_durations[s])
-        + p.generator.fuel_intercept_gal_per_hr * p.hours_per_timestep * 
+        + p.generator.fuel_intercept_gal_per_hr * p.hours_per_timestep *
         sum( m[:binMGGenIsOnInTS][s, tz, ts] for ts in 1:p.elecutil.outage_durations[s])
     )
 
@@ -134,12 +134,12 @@ function add_MG_fuel_burn_constraints(m,p)
     @constraint(m, [t in p.gentechs, s in p.elecutil.scenarios, tz in p.elecutil.outage_start_timesteps],
         m[:dvMGFuelUsed][t, s, tz] <= p.generator.fuel_avail_gal
     )
-    
+
     @constraint(m, [s in p.elecutil.scenarios, tz in p.elecutil.outage_start_timesteps],
         m[:dvMGMaxFuelUsage][s] >= sum( m[:dvMGFuelUsed][t, s, tz] for t in p.gentechs )
     )
-    
-    @expression(m, ExpectedMGFuelUsed, 
+
+    @expression(m, ExpectedMGFuelUsed,
         sum( m[:dvMGMaxFuelUsage][s] * p.elecutil.outage_probabilities[s] for s in p.elecutil.scenarios )
     )
 
@@ -147,11 +147,11 @@ function add_MG_fuel_burn_constraints(m,p)
     @expression(m, MGFuelCost[t in p.gentechs, s in p.elecutil.scenarios, tz in p.elecutil.outage_start_timesteps],
         m[:dvMGFuelUsed][t, s, tz] * p.generator.fuel_cost_per_gallon
     )
-    
+
     @constraint(m, [s in p.elecutil.scenarios, tz in p.elecutil.outage_start_timesteps],
         m[:dvMGMaxFuelCost][s] >= sum( MGFuelCost[t, s, tz] for t in p.gentechs )
     )
-    
+
     @expression(m, ExpectedMGFuelCost,
         sum( m[:dvMGMaxFuelCost][s] * p.elecutil.outage_probabilities[s] for s in p.elecutil.scenarios )
     )
@@ -165,7 +165,7 @@ function add_binMGGenIsOnInTS_constraints(m,p)
         !m[:binMGGenIsOnInTS][s, tz, ts] => { m[:dvMGRatedProduction][t, s, tz, ts] <= 0 }
     )
     @constraint(m, [t in p.gentechs, s in p.elecutil.scenarios, tz in p.elecutil.outage_start_timesteps, ts in p.elecutil.outage_timesteps],
-        m[:binMGGenIsOnInTS][s, tz, ts] => { 
+        m[:binMGGenIsOnInTS][s, tz, ts] => {
             m[:dvMGRatedProduction][t, s, tz, ts] >= p.generator.min_turn_down_pct * m[:dvMGsize][t]
         }
     )
@@ -181,7 +181,7 @@ function add_MG_storage_dispatch_constraints(m,p)
     @constraint(m, [s in p.elecutil.scenarios, tz in p.elecutil.outage_start_timesteps],
         m[:dvMGStoredEnergy][s, tz, 0] <= m[:dvStoredEnergy][:elec, tz]
     )
-    
+
     # state of charge
     @constraint(m, [s in p.elecutil.scenarios, tz in p.elecutil.outage_start_timesteps, ts in p.elecutil.outage_timesteps],
         m[:dvMGStoredEnergy][s, tz, ts] == m[:dvMGStoredEnergy][s, tz, ts-1] + p.hours_per_timestep * (
@@ -194,34 +194,34 @@ function add_MG_storage_dispatch_constraints(m,p)
     @constraint(m, [s in p.elecutil.scenarios, tz in p.elecutil.outage_start_timesteps, ts in p.elecutil.outage_timesteps],
         m[:dvMGStoredEnergy][s, tz, ts] >=  p.storage.soc_min_pct[:elec] * m[:dvStorageEnergy][:elec]
     )
-    
+
     # Dispatch to MG electrical storage is no greater than inverter capacity
     # and can't charge the battery unless binMGStorageUsed = 1
     @constraint(m, [s in p.elecutil.scenarios, tz in p.elecutil.outage_start_timesteps, ts in p.elecutil.outage_timesteps],
         m[:dvStoragePower][:elec] >= sum(m[:dvMGProductionToStorage][t, s, tz, ts] for t in p.techs)
     )
-    
+
     # Dispatch from MG storage is no greater than inverter capacity
     # and can't discharge from storage unless binMGStorageUsed = 1
     @constraint(m, [s in p.elecutil.scenarios, tz in p.elecutil.outage_start_timesteps, ts in p.elecutil.outage_timesteps],
         m[:dvStoragePower][:elec] >= m[:dvMGDischargeFromStorage][s, tz, ts]
     )
-    
+
     # Dispatch to and from electrical storage is no greater than power capacity
     @constraint(m, [s in p.elecutil.scenarios, tz in p.elecutil.outage_start_timesteps, ts in p.elecutil.outage_timesteps],
         m[:dvStoragePower][:elec] >= m[:dvMGDischargeFromStorage][s, tz, ts]
             + sum(m[:dvMGProductionToStorage][t, s, tz, ts] for t in p.techs)
     )
-    
+
     # State of charge upper bound is storage system size
     @constraint(m, [s in p.elecutil.scenarios, tz in p.elecutil.outage_start_timesteps, ts in p.elecutil.outage_timesteps],
         m[:dvStorageEnergy][:elec] >= m[:dvMGStoredEnergy][s, tz, ts]
     )
-    
+
     @constraint(m, [s in p.elecutil.scenarios, tz in p.elecutil.outage_start_timesteps, ts in p.elecutil.outage_timesteps],
         !m[:binMGStorageUsed] => { sum(m[:dvMGProductionToStorage][t, s, tz, ts] for t in p.techs) <= 0 }
     )
-    
+
     @constraint(m, [s in p.elecutil.scenarios, tz in p.elecutil.outage_start_timesteps, ts in p.elecutil.outage_timesteps],
         !m[:binMGStorageUsed] => { m[:dvMGDischargeFromStorage][s, tz, ts] <= 0 }
     )

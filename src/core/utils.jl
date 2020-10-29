@@ -44,7 +44,7 @@ function annuity(years::Int, rate_escalation::Float64, rate_discount::Float64)
 end
 
 
-function levelization_factor(years::Int, rate_escalation::Float64, rate_discount::Float64, 
+function levelization_factor(years::Int, rate_escalation::Float64, rate_discount::Float64,
     rate_degradation::Float64)
     #=
     NOTE: levelization_factor for an electricity producing tech is the ratio of:
@@ -75,14 +75,14 @@ end
 
 
 function effective_cost(;
-    itc_basis::Float64, 
-    replacement_cost::Float64, 
+    itc_basis::Float64,
+    replacement_cost::Float64,
     replacement_year::Int,
-    discount_rate::Float64, 
-    tax_rate::Float64, 
+    discount_rate::Float64,
+    tax_rate::Float64,
     itc::Float64,
-    macrs_schedule::Array{Float64,1}, 
-    macrs_bonus_pct::Float64, 
+    macrs_schedule::Array{Float64,1},
+    macrs_bonus_pct::Float64,
     macrs_itc_reduction::Float64,
     rebate_per_kw::Float64=0.0,
     )
@@ -177,4 +177,3 @@ function npv(rate::Float64, cash_flows::Array)
     end
     return npv
 end
-
