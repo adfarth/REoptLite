@@ -1,5 +1,29 @@
 # REoptLite Changelog
 
+## v0.5.3
+#### Improvements
+- compatible with Julia 1.5
+
+## v0.5.2
+#### bug fixes
+- outage_simulator.jl had bug with summing over empty `Any[]`
+
+#### Improvements
+- add optional `microgrid_only` arg to simulate_outages
+
+## v0.5.1
+#### Improvements
+- added outage dispatch outputs and sped up their derivation
+- removed redundant generator minimum turn down constraint
+
+## v0.5.0
+#### bug fixes
+- handle missing input key for `year_one_soc_series_pct` in `outage_simulator` 
+- remove erroneous `total_unserved_load = 0` output
+- `dvUnservedLoad` definition was allowing microgrid production to storage and curtailment to be double counted towards meeting critical load
+
+#### Improvements
+- add `unserved_load_per_outage` output
 
 ## v0.4.1
 #### bug fixes
