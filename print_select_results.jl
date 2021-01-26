@@ -1,19 +1,46 @@
 # To print select results
 
-printlist = ["PV_kw", "batt_kw", "batt_kwh", "year_one_energy_produced_PV",
-  "lcc", "net_capital_costs_plus_om", "total_energy_cost", "total_demand_cost",
-  "total_fixed_cost", "total_export_benefit",
-  "total_min_charge_adder", "Total_CO2Cost", "Total_HealthCost"]
-  #"mgTotalTechUpgradeCost", "dvMGStorageUpgradeCost", "ExpectedMGFuelCost",
-  #"total_unserved_load", "expected_outage_cost"]
-
+printlist = ["PV_kw", "batt_kw", "batt_kwh",
+  "year_one_energy_produced_PV",
+  # "lcc",
+  # "net_capital_costs_plus_om",
+  "total_energy_cost",
+  "total_demand_cost",
+  "total_fixed_cost",
+  # "total_min_charge_adder",
+  "Total_CO2Cost",
+  "Total_HealthCost",
+  "total_export_benefit",
+  "year_one_export_benefit",
+  "year_one_utility_kwh",
+  # "GridToLoad"
+  # "GridtoBatt"
+  ]
+  #"mgTotalTechUpgradeCost",
+  # "dvMGStorageUpgradeCost",
+  # "ExpectedMGFuelCost",
+  #"total_unserved_load",
+  # "expected_outage_cost"]
 #  "PV_kw_PurchaseSize",
 # "PVmg_kw",
-# "total_unserved_load", "expected_outage_cost"
+# "PV_mg_kw"
+# "total_unserved_load",
+# "expected_outage_cost"
+# "mgPVtoBatt"
+# "mgPVtoCurtail"
+# "mgPVtoLoad"
+# **PV Generation arrays:**
+#PVtoLoad # sum(results["PVtoLoad"])
+#PVtoCUR # sum(results["PVtoCUR"])
+#PVtoNEM # sum(results["PVtoNEM"])
+#PVtoWHL # sum(results["PVtoWHL"])
+#PVtoBatt # sum(results["PVtoBatt"])
+
+
 
 for key in printlist
-    # print(key," : ", results[key], "\n")
-    print(results[key],"\n")
+    print(key," : ", results[key], "\n")
+    # print(results[key],"\n")
     # print(key, "\n")
 end
 
