@@ -7,7 +7,8 @@
     },
     "ElectricUtility": {
         "outage_start_timesteps": [1200],
-        "outage_probabilities": [1.0]
+        "outage_probabilities": [0.0],
+        "outage_durations": [3]
     },
     "PV": {
         "existing_kw": 0.0,
@@ -22,12 +23,13 @@
         "om_cost_per_kw": 16.0,
         "macrs_itc_reduction": 0.5,
         "azimuth": 180.0,
-        "total_rebate_per_kw": 350.0
+        "total_rebate_per_kw": 350.0,
+        "max_kw": 50.0
     },
     "ElectricLoad": {
         "critical_load_pct": 0.1,
         "doe_reference_name": "MidriseApartment",
-        "annual_kwh": 300000.0,
+        "annual_kwh": 100.0,
         "city": "Chicago"
     },
     "ElectricTariff": {
@@ -35,8 +37,11 @@
     },
     "Storage": {
         "can_grid_charge": false,
+        "can_grid_export": false,
         "total_itc_pct": 0.26,
-        "macrs_option_years": 5
+        "macrs_option_years": 5,
+        "max_kwh": 0.0,
+        "max_kw": 0.0
     },
     "Financial": {
         "VoLL": 100.0,
@@ -44,7 +49,7 @@
         "offtaker_tax_pct": 0.0,
         "owner_discount_pct": 0.08,
         "offtaker_discount_pct": 0.03,
-        "cost_tonCO2": [51.786, 52.7724, 53.7588, 54.7452, 55.7316, 56.718, 57.7044, 58.6908, 59.6772, 60.6636, 61.65, 62.883, 64.116, 65.349, 66.582, 67.815, 69.048, 70.281, 71.514, 72.747, 73.98, 74.9664, 75.9528, 76.9392, 77.9256, 78.912],
+        "cost_tonCO2": [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
         "tonCO2_kw": -1.043,
         "health_cost_kwh": -0.0623714
     }

@@ -145,7 +145,7 @@ function build_reopt!(m::JuMP.AbstractModel, p::REoptInputs)
 	if !isempty(p.pvtechs)
 		## Lifetime avoided social CO2 cost from new solar (compared to baseline) (ADF)
 		## Cost_CO2 = sum over years(Cost/ton (indexed on yrs) * ton/kw/yr * kw )
-		## TODO: include degradation
+		## TODO: include degradation, move this to if !empty p.techs, use net_load
 		@expression(m, TotalCO2Cost, sum(p.cost_tonCO2[i] * p.tonCO2_kw *
 			sum( m[:dvPurchaseSize][t] for t in p.pvtechs ) for i in 1:p.analysis_years)
 		)
@@ -181,9 +181,24 @@ function build_reopt!(m::JuMP.AbstractModel, p::REoptInputs)
 			for ts in p.time_steps )
 		)
 		@expression(m, ExportBenefitYr1, TotalExportBenefit / p.pwf_e)
+
+		# ADF: Health Impacts
+		# Do something similar to above for TotalExportBenefit, using MERs
+		# Net load (kW) at each ts: dvGridPurchase - dvNEMexport - dvWHLexport - dvStorageExport
+		# NOTE: levelization_factor is baked into dvNEMexport, dvWHLexport
+		# TODO: Fix this!
+		#@expression(m, net_load[], (
+		#	m[:dvGridPurchase][ts]
+		#	- sum( m[:dvStorageExport][b,u,ts] for b in p.storage.can_grid_charge, u in p.storage.export_bins)
+		#	- sum( m[:dvNEMexport][t, ts] for t in p.techs)
+		#	- sum( m[:dvWHLexport][t, ts]  for t in p.techs)
+		#	for ts in p.time_steps)
+		#)
+
 	else
 		@expression(m, TotalExportBenefit, 0)
 		@expression(m, ExportBenefitYr1, 0)
+		## ADF TODO: add else option for Health and Climate Impacts
 	end
 
 	if !isempty(p.elecutil.outage_durations)
@@ -309,7 +324,7 @@ function run_reopt(m::JuMP.AbstractModel, p::REoptInputs; obj::Int=2)
 			lcc = round(JuMP.objective_value(m)+ 0.0001*value(m[:MinChargeAdder]) + SOCvar)
 		end
 	## End ADf's addition
-		# The code block above replaces the line below (ADF)
+		# The code block above replaces the line below (ADF):
 		# lcc = round(JuMP.objective_value(m)+ 0.0001*value(m[:MinChargeAdder]))
 	catch
 		return Dict(
@@ -386,6 +401,21 @@ function reopt_results(m::JuMP.AbstractModel, p::REoptInputs)
 	## Report Health resutls (ADF)
 	results["Total_HealthCost"] = round(value(m[:TotalHealthCost]), digits=3)
 
+	## Report Net load in each ts (ADF)
+	## Note: the storage part of this currenthly throws an error
+	net_load = (m[:dvGridPurchase][ts]
+		## - sum( m[:dvStorageExport][b,u,ts] for b in p.storage.can_grid_charge, u in p.storage.export_bins)
+		- sum( m[:dvNEMexport][t, ts] for t in p.techs)
+		- sum( m[:dvWHLexport][t, ts]  for t in p.techs)
+		for ts in p.time_steps
+	)
+	results["net_load"] = round.(value.(net_load), digits=3)
+
+	# Report info to track (ADF)
+	## results["storage_export"] = sum( m[:dvStorageExport][b,u,ts] for b in p.storage.can_grid_charge, u in p.storage.export_bins)
+	## results["export_rate_NEM"] = (p.etariff.export_rates[:NEM][ts] for ts in p.time_steps)
+	results["pwf_e"] = p.pwf_e
+
 	if !isempty(p.pvtechs)
     for t in p.pvtechs
 
@@ -421,6 +451,11 @@ function reopt_results(m::JuMP.AbstractModel, p::REoptInputs)
 
 		PVPerUnitSizeOMCosts = p.om_cost_per_kw[t] * p.pwf_om * m[:dvSize][t]
 		results[string(t, "_net_fixed_om_costs")] = round(value(PVPerUnitSizeOMCosts) * (1 - p.owner_tax_pct), digits=0)
+
+		## PV levelization factor (ADF)
+		levelization_factor = p.levelization_factor[t]
+		results[string(t, "_levelization_factor")] = round(value(levelization_factor), digits=3)
+
 	end
 	end
 
@@ -449,7 +484,7 @@ function add_variables!(m::JuMP.AbstractModel, p::REoptInputs)
 		dvWHLexport[p.techs, p.time_steps] >= 0  # [kW]
 		dvSize[p.techs] >= 0  # System Size of Technology t [kW]
 		dvPurchaseSize[p.techs] >= 0  # system kW beyond existing_kw that must be purchased
-		dvGridPurchase[p.time_steps] >= 0  # Power from grid dispatched to meet electrical load [kW]
+		dvGridPurchase[p.time_steps] >= 0  # Power from grid dispatched to meet electrical load [kW] (or charge storage (ADF))
 		dvRatedProduction[p.techs, p.time_steps] >= 0  # Rated production of technology t [kW]
 		dvNEMexport[p.techs, p.time_steps] >= 0  # [kW]
 		dvCurtail[p.techs, p.time_steps] >= 0  # [kW]
@@ -564,8 +599,8 @@ function add_outage_results(m, p, r::Dict)
 	T = length(p.elecutil.outage_start_timesteps)
 	unserved_load_per_outage = Array{Float64}(undef, S, T)
 	for s in 1:S, t in 1:T
-		unserved_load_per_outage[s, t] = sum(r["dvUnservedLoad"][s, t, ts] for 
-											 ts in 1:p.elecutil.outage_durations[s]) 
+		unserved_load_per_outage[s, t] = sum(r["dvUnservedLoad"][s, t, ts] for
+											 ts in 1:p.elecutil.outage_durations[s])
 	# need the ts in 1:p.elecutil.outage_durations[s] b/c dvUnservedLoad has unused values in third dimension
 	end
 	r["unserved_load_per_outage"] = round.(unserved_load_per_outage, digits=2)
@@ -589,36 +624,8 @@ function add_outage_results(m, p, r::Dict)
 			end
 			r[string("mg_", t, "_upgrade_cost")] = round(value(m[:dvMGTechUpgradeCost][t]), digits=2)
 
-<<<<<<< HEAD
-			# if !isempty(p.storage.types)
-			# 	PVtoBatt = (m[:dvMGProductionToStorage][t, s, tz, ts] for
-			# 		s in p.elecutil.scenarios,
-			# 		tz in p.elecutil.outage_start_timesteps,
-			# 		ts in p.elecutil.outage_timesteps)
-			# else
-			# 	PVtoBatt = []
-			# end
-			# r[string("mg", t, "toBatt")] = convert(Array, round.(value.(PVtoBatt), digits=3))
-
-			# PVtoCUR = (m[:dvMGCurtail][t, s, tz, ts] for
-			# 	s in p.elecutil.scenarios,
-			# 	tz in p.elecutil.outage_start_timesteps,
-			# 	ts in p.elecutil.outage_timesteps)
-			# r[string("mg", t, "toCurtail")] = convert(Array, round.(value.(PVtoCUR), digits=3))
-
-			# PVtoLoad = (
-			# 	m[:dvMGRatedProduction][t, s, tz, ts] * p.production_factor[t, tz+ts]
-			# 			* p.levelization_factor[t]
-			# 	- m[:dvMGCurtail][t, s, tz, ts]
-			# 	- m[:dvMGProductionToStorage][t, s, tz, ts] for
-			# 		s in p.elecutil.scenarios,
-			# 		tz in p.elecutil.outage_start_timesteps,
-			# 		ts in p.elecutil.outage_timesteps
-			# )
-			# r[string("mg", t, "toLoad")] = convert(Array, round.(value.(PVtoLoad), digits=3))
-=======
 			if !isempty(p.storage.types)
-				PVtoBatt = (m[:dvMGProductionToStorage][t, s, tz, ts] for 
+				PVtoBatt = (m[:dvMGProductionToStorage][t, s, tz, ts] for
 					s in p.elecutil.scenarios,
 					tz in p.elecutil.outage_start_timesteps,
 					ts in p.elecutil.outage_timesteps)
@@ -627,23 +634,22 @@ function add_outage_results(m, p, r::Dict)
 			end
 			r[string("mg", t, "toBatt")] = round.(value.(PVtoBatt), digits=3)
 
-			PVtoCUR = (m[:dvMGCurtail][t, s, tz, ts] for 
+			PVtoCUR = (m[:dvMGCurtail][t, s, tz, ts] for
 				s in p.elecutil.scenarios,
 				tz in p.elecutil.outage_start_timesteps,
 				ts in p.elecutil.outage_timesteps)
 			r[string("mg", t, "toCurtail")] = round.(value.(PVtoCUR), digits=3)
 
 			PVtoLoad = (
-				m[:dvMGRatedProduction][t, s, tz, ts] * p.production_factor[t, tz+ts] 
+				m[:dvMGRatedProduction][t, s, tz, ts] * p.production_factor[t, tz+ts]
 						* p.levelization_factor[t]
 				- m[:dvMGCurtail][t, s, tz, ts]
-				- m[:dvMGProductionToStorage][t, s, tz, ts] for 
+				- m[:dvMGProductionToStorage][t, s, tz, ts] for
 					s in p.elecutil.scenarios,
 					tz in p.elecutil.outage_start_timesteps,
 					ts in p.elecutil.outage_timesteps
 			)
 			r[string("mg", t, "toLoad")] = round.(value.(PVtoLoad), digits=3)
->>>>>>> upstream/master
 		end
 	end
 
@@ -661,36 +667,8 @@ function add_outage_results(m, p, r::Dict)
 			r[string("mg_", t, "_fuel_used")] = value.(m[:dvMGFuelUsed][t, :, :]).data
 			r[string("mg_", t, "_upgrade_cost")] = round(value(m[:dvMGTechUpgradeCost][t]), digits=2)
 
-<<<<<<< HEAD
-			# if !isempty(p.storage.types)
-			# 	GenToBatt = (m[:dvMGProductionToStorage][t, s, tz, ts] for
-			# 		s in p.elecutil.scenarios,
-			# 		tz in p.elecutil.outage_start_timesteps,
-			# 		ts in p.elecutil.outage_timesteps)
-			# else
-			# 	GenToBatt = []
-			# end
-			# r[string("mg", t, "toBatt")] = convert(Array, round.(value.(GenToBatt), digits=3))
-
-			# GENtoCUR = (m[:dvMGCurtail][t, s, tz, ts] for
-			# 	s in p.elecutil.scenarios,
-			# 	tz in p.elecutil.outage_start_timesteps,
-			# 	ts in p.elecutil.outage_timesteps)
-			# r[string("mg", t, "toCurtail")] = convert(Array, round.(value.(GENtoCUR), digits=3))
-
-			# GENtoLoad = (
-			# 	m[:dvMGRatedProduction][t, s, tz, ts] * p.production_factor[t, tz+ts]
-			# 			* p.levelization_factor[t]
-			# 	- m[:dvMGCurtail][t, s, tz, ts]
-			# 	- m[:dvMGProductionToStorage][t, s, tz, ts] for
-			# 		s in p.elecutil.scenarios,
-			# 		tz in p.elecutil.outage_start_timesteps,
-			# 		ts in p.elecutil.outage_timesteps
-			# )
-			# r[string("mg", t, "toLoad")] = convert(Array, round.(value.(GENtoLoad), digits=3))
-=======
 			if !isempty(p.storage.types)
-				GenToBatt = (m[:dvMGProductionToStorage][t, s, tz, ts] for 
+				GenToBatt = (m[:dvMGProductionToStorage][t, s, tz, ts] for
 					s in p.elecutil.scenarios,
 					tz in p.elecutil.outage_start_timesteps,
 					ts in p.elecutil.outage_timesteps)
@@ -699,30 +677,31 @@ function add_outage_results(m, p, r::Dict)
 			end
 			r[string("mg", t, "toBatt")] = round.(value.(GenToBatt), digits=3)
 
-			GENtoCUR = (m[:dvMGCurtail][t, s, tz, ts] for 
+			GENtoCUR = (m[:dvMGCurtail][t, s, tz, ts] for
 				s in p.elecutil.scenarios,
 				tz in p.elecutil.outage_start_timesteps,
 				ts in p.elecutil.outage_timesteps)
 			r[string("mg", t, "toCurtail")] = round.(value.(GENtoCUR), digits=3)
 
 			GENtoLoad = (
-				m[:dvMGRatedProduction][t, s, tz, ts] * p.production_factor[t, tz+ts] 
+				m[:dvMGRatedProduction][t, s, tz, ts] * p.production_factor[t, tz+ts]
 						* p.levelization_factor[t]
 				- m[:dvMGCurtail][t, s, tz, ts]
-				- m[:dvMGProductionToStorage][t, s, tz, ts] for 
+				- m[:dvMGProductionToStorage][t, s, tz, ts] for
 					s in p.elecutil.scenarios,
 					tz in p.elecutil.outage_start_timesteps,
 					ts in p.elecutil.outage_timesteps
 			)
 			r[string("mg", t, "toLoad")] = round.(value.(GENtoLoad), digits=3)
->>>>>>> upstream/master
 		end
 	end
 
 	## Adding microcgrid cost results (ADF)
+	# TODO: Compare to new results reported above and consider removing
 	if !isempty(p.elecutil.outage_durations)
 		r["mgTotalTechUpgradeCost"] = round(value(m[:mgTotalTechUpgradeCost]), digits=4)
 		r["dvMGStorageUpgradeCost"] = round(value(m[:dvMGStorageUpgradeCost]), digits=4)
 		r["ExpectedMGFuelCost"] = round(value(m[:ExpectedMGFuelCost]), digits=4)
 	end
+
 end

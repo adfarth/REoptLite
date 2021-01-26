@@ -34,7 +34,7 @@ data for electric tariff in reopt model
 """
 # TODO function for creating BAU inputs: don't need for tariff b/c Tech repeats no longer needed?
 struct ElectricTariff
-    energy_rates::Array{Float64,1} 
+    energy_rates::Array{Float64,1}
 
     monthly_demand_rates::Array{Float64,1}
     time_steps_monthly::Array{Array{Int64,1},1}  # length = 0 or 12
@@ -58,12 +58,12 @@ function ElectricTariff(;
     year::Int=2019,
     time_steps_per_hour::Int=1,
     NEM::Bool=false,
-    wholesale_rate::T=nothing, 
+    wholesale_rate::T=nothing,
     curtail_cost::S=0,
     monthly_energy_rates::Array=[],
     monthly_demand_rates::Array=[],
     ) where {T <: Union{Nothing, Int, Float64, Array}, S <: Union{Nothing, Int, Float64, Array}}
-    
+
     nem_rate = [100.0 for _ in 1:8760*time_steps_per_hour]
 
     u = nothing
@@ -118,7 +118,7 @@ function ElectricTariff(;
         energy_rates, monthly_demand_rates, tou_demand_rates = remove_tiers_from_urdb_rate(u)
         time_steps_monthly = Array[]
         if !isempty(u.monthly_demand_rates)
-            time_steps_monthly = 
+            time_steps_monthly =
                 get_monthly_timesteps(year, time_steps_per_hour=time_steps_per_hour)
         end
 
@@ -132,7 +132,7 @@ function ElectricTariff(;
     3 "tiers": 1. NEM (Net Energy Metering), 2. WHL (Wholesale), 3. CUR (Curtail)
     - if NEM then set ExportRate[:Nem, :] to energy_rate[tier_with_lowest_energy_rate, :]
         - otherwise set to 100 dollars/kWh
-    - user can provide either scalar wholesale rate or vector of timesteps, 
+    - user can provide either scalar wholesale rate or vector of timesteps,
         - otherwise set to 100 dollars/kWh
     - curtail cost set to zero by default, but can be specified same as wholesale rate
     =#
@@ -162,7 +162,7 @@ end
 
 function get_tier_with_lowest_energy_rate(u::URDBrate)
     """
-    ExportRate should be lowest energy cost for tiered rates. 
+    ExportRate should be lowest energy cost for tiered rates.
     Otherwise, ExportRate can be > FuelRate, which leads REopt to export all PV energy produced.
     """
     tier_with_lowest_energy_cost = 1
@@ -171,7 +171,7 @@ function get_tier_with_lowest_energy_rate(u::URDBrate)
         for etier in u.energy_rates
             push!(annual_energy_charge_sums, sum(etier))
         end
-        tier_with_lowest_energy_cost = 
+        tier_with_lowest_energy_cost =
             findall(annual_energy_charge_sums .== minimum(annual_energy_charge_sums))[1]
     end
     return tier_with_lowest_energy_cost
