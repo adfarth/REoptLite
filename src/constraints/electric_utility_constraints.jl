@@ -31,24 +31,24 @@ function add_export_constraints(m, p)
 
     ##Constraint (8e): Production export no greater than production
     @constraint(m, [t in p.techs, ts in p.time_steps_with_grid],
-        p.production_factor[t,ts] * p.levelization_factor[t] * m[:dvRatedProduction][t,ts] >= 
+        p.production_factor[t,ts] * p.levelization_factor[t] * m[:dvRatedProduction][t,ts] >=
         m[:dvWHLexport][t, ts] + m[:dvNEMexport][t, ts] + m[:dvCurtail][t, ts]
     )
-    
+
     ##Constraint (8f): Total sales to grid no greater than annual allocation - storage tiers
     @constraint(m,
-        p.hours_per_timestep * ( 
-        sum( m[:dvStorageExport][b,u,ts] for b in p.storage.types, u in p.storage.export_bins, ts in p.time_steps_with_grid if !(u in p.etariff.curtail_bins)) 
+        p.hours_per_timestep * (
+        sum( m[:dvStorageExport][b,u,ts] for b in p.storage.types, u in p.storage.export_bins, ts in p.time_steps_with_grid if !(u in p.etariff.curtail_bins))
         + sum( m[:dvWHLexport][t, ts] for t in p.techs, ts in p.time_steps_with_grid)
         + sum( m[:dvNEMexport][t, ts] for t in p.techs, ts in p.time_steps_with_grid)
         ) <= p.max_grid_export_kwh
     )
 
-   ### Constraint set (9): Net Meter Module 
+   ### Constraint set (9): Net Meter Module
    ##Constraint (9c): Net metering only -- can't sell more than you purchase
    # note that hours_per_timestep is cancelled on both sides, but used for unit consistency (convert power to energy)
     @constraint(m,
-        p.hours_per_timestep * ( 
+        p.hours_per_timestep * (
         sum( m[:dvNEMexport][t, ts] for t in p.techs, ts in p.time_steps)
         + sum( m[:dvStorageExport][b, u, ts] for b in p.storage.types, u in p.storage.export_bins, ts in p.time_steps)
         ) <= p.hours_per_timestep * sum( m[:dvGridPurchase][ts] for ts in p.time_steps)
@@ -65,7 +65,7 @@ end
 
 
 function add_tou_peak_constraint(m, p)
-    ## Constraint (12d): Ratchet peak demand is >= demand at each hour in the ratchet` 
+    ## Constraint (12d): Ratchet peak demand is >= demand at each hour in the ratchet`
     @constraint(m, [r in p.ratchets, ts in p.etariff.tou_demand_ratchet_timesteps[r]],
         m[:dvPeakDemandTOU][r] >= m[:dvGridPurchase][ts]
     )
@@ -73,8 +73,8 @@ end
 
 
 function add_mincharge_constraint(m, p)
-    @constraint(m, MinChargeAddCon, 
-        m[:MinChargeAdder] >= m[:TotalMinCharge] - ( m[:TotalEnergyChargesUtil] + 
+    @constraint(m, MinChargeAddCon,
+        m[:MinChargeAdder] >= m[:TotalMinCharge] - ( m[:TotalEnergyChargesUtil] +
         m[:TotalDemandCharges] + m[:TotalExportBenefit] + m[:TotalFixedCharges] )
     )
 end

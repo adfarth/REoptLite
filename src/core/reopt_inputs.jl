@@ -71,11 +71,10 @@ struct REoptInputs
     min_resil_timesteps::Int
     mg_tech_sizes_equal_grid_sizes::Bool
 
-    tonCO2_kw::Float64 # tons CO2 avoided per kw solar PV (ADF)
-    cost_tonCO2::Array{Real,1} # social cost of carbon per year (already discounted)
-    analysis_years::Int # (ADF)
-    degradation_pcts::DenseAxisArray{Float64, 1}  # (techs) # (ADF)
-    health_cost_kwh::Float64 # BPK values (ADF)
+    emissions::Emissions # ADF
+    offtaker_discount_pct::Float64 # ADF
+    analysis_years::Int # ADF
+
 end
 
 function REoptInputs(fp::String)
@@ -87,9 +86,9 @@ function REoptInputs(s::Scenario)
 
     time_steps = 1:length(s.electric_load.loads_kw)
     hours_per_timestep = 8760.0 / length(s.electric_load.loads_kw)
-    ##  ADF added degradation_pcts
+
     techs, pvtechs, gentechs, pv_to_location, maxsize_pv_locations, pvlocations, production_factor,
-        max_sizes, min_sizes, existing_sizes, cap_cost_slope, om_cost_per_kw, degradation_pcts  = setup_tech_inputs(s)
+        max_sizes, min_sizes, existing_sizes, cap_cost_slope, om_cost_per_kw  = setup_tech_inputs(s)
     elec_techs = techs  # only modeling electric loads/techs so far
     techs_no_turndown = pvtechs
 
@@ -151,14 +150,11 @@ function REoptInputs(s::Scenario)
         s.electric_utility,
         s.site.min_resil_timesteps,
         s.site.mg_tech_sizes_equal_grid_sizes,
-        ## CO2 impacts (ADF)
-        s.financial.tonCO2_kw,
-        s.financial.cost_tonCO2,
-        # Other (ADF)
-        s.financial.analysis_years,
-        degradation_pcts,
-        # Health impacts (ADF)
-        s.financial.health_cost_kwh
+
+        s.emissions, # ADF
+        s.financial.offtaker_discount_pct, # ADF
+        s.financial.analysis_years # ADF
+
     )
 end
 
@@ -203,7 +199,7 @@ function setup_tech_inputs(s::Scenario)
     end
 
     return techs, pvtechs, gentechs, pv_to_location, maxsize_pv_locations, pvlocations, production_factor,
-    max_sizes, min_sizes, existing_sizes, cap_cost_slope, om_cost_per_kw, degradation_pcts # ADF added degradation_pcts
+    max_sizes, min_sizes, existing_sizes, cap_cost_slope, om_cost_per_kw
 end
 
 

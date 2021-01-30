@@ -48,6 +48,10 @@ using Dates
 import MathOptInterface
 const MOI = MathOptInterface
 
+import CSV # ADF
+using CSV # ADF
+using DataFrames # ADF
+
 include("keys.jl")
 include("core/types.jl")
 include("core/utils.jl")
@@ -62,6 +66,7 @@ include("core/electric_utility.jl")
 include("core/prodfactor.jl")
 include("core/urdb.jl")
 include("core/electric_tariff.jl")
+include("core/emissions.jl") # ADF
 include("core/scenario.jl")
 include("core/reopt_inputs.jl")
 

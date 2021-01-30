@@ -141,24 +141,6 @@ function build_reopt!(m::JuMP.AbstractModel, p::REoptInputs)
 		sum( p.om_cost_per_kw[t] * m[:dvSize][t] for t in p.techs )
 	)
 
-	# ADF
-	if !isempty(p.pvtechs)
-		## Lifetime avoided social CO2 cost from new solar (compared to baseline) (ADF)
-		## Cost_CO2 = sum over years(Cost/ton (indexed on yrs) * ton/kw/yr * kw )
-		## TODO: include degradation, move this to if !empty p.techs, use net_load
-		@expression(m, TotalCO2Cost, sum(p.cost_tonCO2[i] * p.tonCO2_kw *
-			sum( m[:dvPurchaseSize][t] for t in p.pvtechs ) for i in 1:p.analysis_years)
-		)
-
-		# Lifetime avoided negative health impacts from new solar (compared to baseline) (ADF)
-		## Cost_health = HealthBen/kWh * sum(year1PVProd * (1-deg)^(yr-1))
-		## Year1PVProduction = (sum(m[:dvRatedProduction][t,ts] * p.production_factor[t, ts] for ts in p.time_steps) * p.hours_per_timestep)
-		@expression(m, TotalHealthCost, p.health_cost_kwh * p.hours_per_timestep *
-			sum(m[:dvRatedProduction][t,ts] * p.production_factor[t, ts] * (1-p.degradation_pcts[t])^(i-1)
-			for i in 1:p.analysis_years, t in p.pvtechs, ts in p.time_steps)
-		)
-	end
-
     if !isempty(p.gentechs)
 		m[:TotalPerUnitProdOMCosts] = @expression(m, p.two_party_factor * p.pwf_om *
 			sum(p.generator.om_cost_per_kwh * p.hours_per_timestep *
@@ -182,24 +164,49 @@ function build_reopt!(m::JuMP.AbstractModel, p::REoptInputs)
 		)
 		@expression(m, ExportBenefitYr1, TotalExportBenefit / p.pwf_e)
 
-		# ADF: Health Impacts
-		# Do something similar to above for TotalExportBenefit, using MERs
-		# Net load (kW) at each ts: dvGridPurchase - dvNEMexport - dvWHLexport - dvStorageExport
-		# NOTE: levelization_factor is baked into dvNEMexport, dvWHLexport
-		# TODO: Fix this!
-		#@expression(m, net_load[], (
-		#	m[:dvGridPurchase][ts]
-		#	- sum( m[:dvStorageExport][b,u,ts] for b in p.storage.can_grid_charge, u in p.storage.export_bins)
-		#	- sum( m[:dvNEMexport][t, ts] for t in p.techs)
-		#	- sum( m[:dvWHLexport][t, ts]  for t in p.techs)
-		#	for ts in p.time_steps)
-		#)
+		# Net load with techs (ADF)
+		# TODO: Figure out what's happening with dvStorageExport
+		# TODO: replace 8760 with ts in time_steps
+		len = length(p.time_steps)
+		@expression(m, net_load[ts=1:len], (m[:dvGridPurchase][ts]
+			## - sum( m[:dvStorageExport][b,u,ts] for b in p.storage.can_grid_charge, u in p.storage.export_bins)
+			- sum( m[:dvNEMexport][t, ts] for t in p.techs)
+			- sum( m[:dvWHLexport][t, ts]  for t in p.techs))
+		)
 
 	else
 		@expression(m, TotalExportBenefit, 0)
 		@expression(m, ExportBenefitYr1, 0)
-		## ADF TODO: add else option for Health and Climate Impacts
+
+		# Net load without techs (ADF)
+		len = length(p.time_steps)
+		@expression(m, net_load[ts=1:len], m[:dvGridPurchase][ts]
+		)
 	end
+
+	# TotalCO2Cost (ADF)
+	# npv of annual CO2 cost cashflows, using offtaker discount %
+	@expression(m, TotalCO2Cost,
+		npv(p.offtaker_discount_pct,
+			[p.emissions.cost_ton_CO2 * sum(m[:net_load][ts]
+			* p.emissions.ton_kWh_CO2[ts, yr] for ts in p.time_steps)
+			for yr in 1:p.analysis_years] )
+	)
+
+	# TotalHealthCost (ADF)
+	# npv of annual SO2 & NOx cost cashflows, using offtaker discount %
+	@expression(m, TotalHealthCost,
+		# SO2 Cost
+		npv(p.offtaker_discount_pct,
+			[p.emissions.cost_lb_SO2 * sum(m[:net_load][ts]
+			* p.emissions.lb_kWh_SO2[ts, yr] for ts in p.time_steps)
+			for yr in 1:p.analysis_years] )
+		# NOx Cost
+		+ npv(p.offtaker_discount_pct,
+			[p.emissions.cost_lb_NOx * sum(m[:net_load][ts]
+			* p.emissions.lb_kWh_NOx[ts, yr] for ts in p.time_steps)
+			for yr in 1:p.analysis_years] )
+	)
 
 	if !isempty(p.elecutil.outage_durations)
 		add_dv_UnservedLoad_constraints(m,p)
@@ -273,10 +280,10 @@ function build_reopt!(m::JuMP.AbstractModel, p::REoptInputs)
 		# Utility Bill, tax deductible for offtaker
 		(TotalEnergyChargesUtil + TotalDemandCharges + TotalExportBenefit + TotalFixedCharges + 0.999 * m[:MinChargeAdder]) * (1 - p.offtaker_tax_pct) +
 
-		## Cost of change in carbon dioxide emissions from new PV (ADF)
+		# Cost of CO2 emissions from electricity consumption (ADF)
 		TotalCO2Cost +
 
-		## Cost (or benefit) of change in health impacts (ADF)
+		# Cost of SO2 and NOx emissions from electricity consumption (ADF)
 		TotalHealthCost
 	);
 	if !isempty(p.elecutil.outage_durations)
@@ -396,10 +403,10 @@ function reopt_results(m::JuMP.AbstractModel, p::REoptInputs)
     results["GridToLoad"] = round.(value.(GridToLoad), digits=3)
 
 	## Report CO2 results (ADF)
-	results["Total_CO2Cost"] = round(value(m[:TotalCO2Cost]), digits=3)
+	results["TotalCO2Cost"] = round(value(m[:TotalCO2Cost]), digits=3)
 
 	## Report Health resutls (ADF)
-	results["Total_HealthCost"] = round(value(m[:TotalHealthCost]), digits=3)
+	results["TotalHealthCost"] = round(value(m[:TotalHealthCost]), digits=3)
 
 	## Report Net load in each ts (ADF)
 	## Note: the storage part of this currenthly throws an error

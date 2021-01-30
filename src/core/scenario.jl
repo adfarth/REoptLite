@@ -36,6 +36,7 @@ struct Scenario
     electric_utility::ElectricUtility
     financial::Financial
     generator::Generator
+    emissions::Emissions # ADF
 end
 
 
@@ -86,13 +87,22 @@ function Scenario(d::Dict)
     electric_load = ElectricLoad(; dictkeys_tosymbols(d["ElectricLoad"])...)
 
     electric_tariff = ElectricTariff(; dictkeys_tosymbols(d["ElectricTariff"])...,
-                                       year=electric_load.year
+                                       year=electric_load.year # why does this get sent 2017 as the year? (ADF)
                                     )
 
     if haskey(d, "Generator")
         generator = Generator(; dictkeys_tosymbols(d["Generator"])...)
     else
         generator = Generator(; max_kw=0)
+    end
+
+    # ADF
+    if haskey(d, "Emissions")
+        emissions = Emissions(; dictkeys_tosymbols(d["Emissions"])...,
+                                analysis_years=financial.analysis_years
+                            )
+    else
+        emissions = Emissions(; balancing_authority=0)
     end
 
     return Scenario(
@@ -103,7 +113,8 @@ function Scenario(d::Dict)
         electric_load,
         electric_utility,
         financial,
-        generator
+        generator,
+        emissions # ADF
     )
 end
 

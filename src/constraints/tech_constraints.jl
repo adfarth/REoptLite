@@ -30,13 +30,13 @@
 function add_tech_size_constraints(m, p)
 
     # PV techs can be constrained by space available based on location at site (roof, ground, both)
-    ## Upper bound on dvSize (ADF)
+    ## Upper bound on dvSize (ADF comment)
     @constraint(m, [loc in p.pvlocations],
         sum(m[:dvSize][t] * p.pv_to_location[t, loc] for t in p.pvtechs) <= p.maxsize_pv_locations[loc]
     )
 
     # max size limit
-    ## Also upper bound on dvSize? (ADF)
+    ## Also upper bound on dvSize? (ADF comment)
     @constraint(m, [t in p.techs],
         m[:dvSize][t] <= p.max_sizes[t]
     )
