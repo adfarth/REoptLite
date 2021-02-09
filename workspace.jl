@@ -10,10 +10,37 @@
 [51.786, 52.7724, 53.7588, 54.7452, 55.7316, 56.718, 57.7044, 58.6908, 59.6772, 60.6636, 61.65, 62.883, 64.116, 65.349, 66.582, 67.815, 69.048, 70.281, 71.514, 72.747, 73.98, 74.9664, 75.9528, 76.9392, 77.9256, 78.912]
 [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00]
 
-# For outages
-        "outage_durations": [3],
+# "ElectricUtility"
+"outage_durations": [3],
+"ElectricUtility": {
+    "outage_start_timesteps": [1200],
+    "outage_probabilities": [0.0],
+    "outage_durations": [3]
+},
 
-# For storage
+# Emissions
+"balancing_authority": 103
+# Ann Arbor:
+,
+"Emissions": {
+    "cost_ton_CO2": 40.0,
+    "cost_lb_NOx": 9.26,
+    "cost_lb_SO2": 17.10,
+    "balancing_authority": 103
+}
+# DC:
+,
+"Emissions": {
+    "cost_ton_CO2": 40.0,
+    "cost_lb_NOx": 7.20,
+    "cost_lb_SO2": 14.75,
+    "balancing_authority": 123
+}
+
+# PV
+"max_kw": 0.0
+
+# Storage
 "max_kwh": 0.0,
 "max_kw": 0.0
 
@@ -28,3 +55,13 @@
 # Things to remember:
 - set obj = 1 or 2 around line 300 in reopt.jl
 - After making changes, must exit() and restart Julia
+
+using CSV, DataFrames
+# my array
+A =
+
+# name of file
+name =
+
+# Write it! 
+CSV.write("/Volumes/GoogleDrive/My Drive/0_Michigan/Master's Thesis/Emissions/my_data/$name.csv, DataFrame(A), writeheader=false)

@@ -3,18 +3,19 @@
 struct Emissions
 
     ton_kWh_CO2::Array{Real,2} # 8760 x n years [tonnes / kWh]
-    lb_kWh_SO2::Array{Real,2} # [lb/kWh]
-    lb_kWh_NOx::Array{Real,2} # [lb/kWh]
+    lb_kWh_SO2::Array{Real,2} # [lb/kWh] TODO: make this ton/kWh to match EASIUR units
+    lb_kWh_NOx::Array{Real,2} # [lb/kWh] TODO: make this ton/kWh to match EASIUR units
 
     cost_ton_CO2::Real # TODO: Consider also making this an array of values from EPA table
-    cost_lb_SO2::Real # Obtain from EASIUR
+    # TODO: Make EASIUR costs an array of seasonal costs
+    cost_lb_SO2::Real # Obtain from EASIUR TODO: make cost_ton_SO2
     cost_lb_NOx::Real # Obtain from EASIUR
 
 end
 
 function Emissions(;
-    year::Int=2019, # TODO set year=electric_load.year in scenario.jl
-    analysis_years::Int = 25, # TODO set =financial.analysis_years in scenario.jl
+    year::Int=2019,
+    analysis_years::Int = 25,
 
     cost_ton_CO2::Real = 0.0, # Prev: [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
     cost_lb_SO2::Real = 0.0,
@@ -27,8 +28,8 @@ function Emissions(;
         if (balancing_authority==0) # when Emissions inputs are missing
                 # Set arrays to zero
                 ton_kWh_CO2 = zeros(Float64, 8760, analysis_years)
-                cost_lb_SO2 = zeros(Float64, 8760, analysis_years)
-                cost_lb_NOx = zeros(Float64, 8760, analysis_years)
+                lb_kWh_SO2 = zeros(Float64, 8760, analysis_years)
+                lb_kWh_NOx = zeros(Float64, 8760, analysis_years)
 
         else
         # TODO set path with joinpath(dirname(pathof(REoptLite)), "..", "data") once REopt is a pkg

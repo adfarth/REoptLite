@@ -166,7 +166,6 @@ function build_reopt!(m::JuMP.AbstractModel, p::REoptInputs)
 
 		# Net load with techs (ADF)
 		# TODO: Figure out what's happening with dvStorageExport
-		# TODO: replace 8760 with ts in time_steps
 		len = length(p.time_steps)
 		@expression(m, net_load[ts=1:len], (m[:dvGridPurchase][ts]
 			## - sum( m[:dvStorageExport][b,u,ts] for b in p.storage.can_grid_charge, u in p.storage.export_bins)
@@ -384,7 +383,7 @@ function reopt_results(m::JuMP.AbstractModel, p::REoptInputs)
 						 "year_one_demand_cost" => round(value(Year1DemandCost), digits=2),
 						 "year_one_demand_tou_cost" => round(value(Year1DemandTOUCost), digits=2),
 						 "year_one_demand_flat_cost" => round(value(Year1DemandFlatCost), digits=2),
-						 "year_one_export_benefit" => round(value(m[:ExportBenefitYr1]), digits=0),
+						 "year_one_export_benefit" => round(value(m[:ExportBenefitYr1]), digits=0), # Should be * -1 (ADF)
 						 "year_one_fixed_cost" => round(Year1FixedCharges, digits=0),
 						 "year_one_min_charge_adder" => round(value(Year1MinCharges), digits=2),
 						 "year_one_bill" => round(value(Year1Bill), digits=2),
@@ -422,6 +421,13 @@ function reopt_results(m::JuMP.AbstractModel, p::REoptInputs)
 	## results["storage_export"] = sum( m[:dvStorageExport][b,u,ts] for b in p.storage.can_grid_charge, u in p.storage.export_bins)
 	## results["export_rate_NEM"] = (p.etariff.export_rates[:NEM][ts] for ts in p.time_steps)
 	results["pwf_e"] = p.pwf_e
+	results["VoLL"] = p.VoLL
+	results["ton_kWh_CO2"] = p.emissions.ton_kWh_CO2
+	results["lb_kWh_SO2"] = p.emissions.lb_kWh_SO2
+	results["lb_kWh_NOx"] = p.emissions.lb_kWh_NOx
+	results["cost_ton_CO2"] = p.emissions.cost_ton_CO2
+	results["cost_lb_NOx"] = p.emissions.cost_lb_NOx
+	results["cost_lb_SO2"] = p.emissions.cost_lb_SO2
 
 	if !isempty(p.pvtechs)
     for t in p.pvtechs
@@ -459,7 +465,7 @@ function reopt_results(m::JuMP.AbstractModel, p::REoptInputs)
 		PVPerUnitSizeOMCosts = p.om_cost_per_kw[t] * p.pwf_om * m[:dvSize][t]
 		results[string(t, "_net_fixed_om_costs")] = round(value(PVPerUnitSizeOMCosts) * (1 - p.owner_tax_pct), digits=0)
 
-		## PV levelization factor (ADF)
+		# Report levelization_factor (ADF)
 		levelization_factor = p.levelization_factor[t]
 		results[string(t, "_levelization_factor")] = round(value(levelization_factor), digits=3)
 
@@ -706,6 +712,10 @@ function add_outage_results(m, p, r::Dict)
 	## Adding microcgrid cost results (ADF)
 	# TODO: Compare to new results reported above and consider removing
 	if !isempty(p.elecutil.outage_durations)
+		r["outage_start_timesteps"] = round.(value.(p.elecutil.outage_start_timesteps, digits=1))
+		r["outage_durations"] = round.(value.(p.elecutil.outage_durations, digits=3))
+		r["outage_probabilities"] = round.(value.(p.elecutil.outage_probabilities, digits=1))
+
 		r["mgTotalTechUpgradeCost"] = round(value(m[:mgTotalTechUpgradeCost]), digits=4)
 		r["dvMGStorageUpgradeCost"] = round(value(m[:dvMGStorageUpgradeCost]), digits=4)
 		r["ExpectedMGFuelCost"] = round(value(m[:ExpectedMGFuelCost]), digits=4)
