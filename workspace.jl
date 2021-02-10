@@ -20,6 +20,7 @@
 
 # Emissions
 "balancing_authority": 103
+
 # Ann Arbor:
 ,
 "Emissions": {
@@ -56,12 +57,15 @@
 - set obj = 1 or 2 around line 300 in reopt.jl
 - After making changes, must exit() and restart Julia
 
+
 using CSV, DataFrames
 # my array
-A =
+A = results["lb_kWh_SO2"]
 
 # name of file
-name =
+#name = "ton_kWh_CO2_103"
+name = "lb_kWh_SO2_123"
+#name = "lb_kWh_NOx_123"
 
-# Write it! 
-CSV.write("/Volumes/GoogleDrive/My Drive/0_Michigan/Master's Thesis/Emissions/my_data/$name.csv, DataFrame(A), writeheader=false)
+# Write it!
+CSV.write("/Volumes/GoogleDrive/My Drive/0_Michigan/Master's Thesis/Emissions/my_data/$name.csv", DataFrame(A), writeheader=false)

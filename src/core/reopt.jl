@@ -177,7 +177,7 @@ function build_reopt!(m::JuMP.AbstractModel, p::REoptInputs)
 		@expression(m, TotalExportBenefit, 0)
 		@expression(m, ExportBenefitYr1, 0)
 
-		# Net load without techs (ADF)
+		# Net load without techs (ADF) - just grid purchases
 		len = length(p.time_steps)
 		@expression(m, net_load[ts=1:len], m[:dvGridPurchase][ts]
 		)
@@ -194,16 +194,41 @@ function build_reopt!(m::JuMP.AbstractModel, p::REoptInputs)
 
 	# TotalHealthCost (ADF)
 	# npv of annual SO2 & NOx cost cashflows, using offtaker discount %
+	# Seasonal costs from EASIUR. NOTE: This might only work with hourly timesteps
 	@expression(m, TotalHealthCost,
 		# SO2 Cost
+		##npv(p.offtaker_discount_pct,
+		##	[p.emissions.cost_ton_SO2 * sum(m[:net_load][ts]
+		##	* p.emissions.ton_kWh_SO2[ts, yr] for ts in p.time_steps)
+		##	for yr in 1:p.analysis_years] )
 		npv(p.offtaker_discount_pct,
-			[p.emissions.cost_ton_SO2 * sum(m[:net_load][ts]
-			* p.emissions.ton_kWh_SO2[ts, yr] for ts in p.time_steps)
+			[(
+			# Winter
+			p.emissions.cost_ton_SO2[1] * sum(m[:net_load][ts] * p.emissions.ton_kWh_SO2[ts, yr] for ts in 1:2160)
+			# Spring
+			+ p.emissions.cost_ton_SO2[2] * sum(m[:net_load][ts] * p.emissions.ton_kWh_SO2[ts, yr] for ts in 2161:4344)
+			# Summer
+			+ p.emissions.cost_ton_SO2[3] * sum(m[:net_load][ts] * p.emissions.ton_kWh_SO2[ts, yr] for ts in 4345:6552)
+			# Fall
+			+ p.emissions.cost_ton_SO2[4] * sum(m[:net_load][ts] * p.emissions.ton_kWh_SO2[ts, yr] for ts in 6553:8760)
+			)
 			for yr in 1:p.analysis_years] )
 		# NOx Cost
+		##+ npv(p.offtaker_discount_pct,
+		##	[p.emissions.cost_ton_NOx * sum(m[:net_load][ts]
+		##	* p.emissions.ton_kWh_NOx[ts, yr] for ts in p.time_steps)
+		##	for yr in 1:p.analysis_years] )
 		+ npv(p.offtaker_discount_pct,
-			[p.emissions.cost_ton_NOx * sum(m[:net_load][ts]
-			* p.emissions.ton_kWh_NOx[ts, yr] for ts in p.time_steps)
+			[(
+			# Winter
+			p.emissions.cost_ton_NOx[1] * sum(m[:net_load][ts] * p.emissions.ton_kWh_NOx[ts, yr] for ts in 1:2160)
+			# Spring
+			+ p.emissions.cost_ton_NOx[2] * sum(m[:net_load][ts] * p.emissions.ton_kWh_NOx[ts, yr] for ts in 2161:4344)
+			# Summer
+			+ p.emissions.cost_ton_NOx[3] * sum(m[:net_load][ts] * p.emissions.ton_kWh_NOx[ts, yr] for ts in 4345:6552)
+			# Fall
+			+ p.emissions.cost_ton_NOx[4] * sum(m[:net_load][ts] * p.emissions.ton_kWh_NOx[ts, yr] for ts in 6553:8760)
+			)
 			for yr in 1:p.analysis_years] )
 	)
 

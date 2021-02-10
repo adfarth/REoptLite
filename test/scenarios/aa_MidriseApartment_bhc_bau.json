@@ -51,9 +51,9 @@
         "offtaker_discount_pct": 0.03
     },
     "Emissions": {
+        "balancing_authority": 103,
         "cost_ton_CO2": 40.0,
-        "cost_ton_NOx": 9.26,
-        "cost_ton_SO2": 17.10,
-        "balancing_authority": 103
+        "cost_ton_NOx": [28100.0, 23900,0, 9400.0, 20300.0],
+        "cost_ton_SO2": [27900.0, 45000.0, 49100.0, 28800.0]
     }
 }

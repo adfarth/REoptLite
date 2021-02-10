@@ -3,23 +3,24 @@
 struct Emissions
 
     ton_kWh_CO2::Array{Real,2} # 8760 x n years [tonnes / kWh]
-    ton_kWh_SO2::Array{Real,2} # [tonnes/kWh]
-    ton_kWh_NOx::Array{Real,2} # [tonnes/kWh]
+    ton_kWh_SO2::Array{Real,2} # 8760 x n years [tonnes/kWh]
+    ton_kWh_NOx::Array{Real,2} # 8760 x n years [tonnes/kWh]
 
     cost_ton_CO2::Real # TODO: Consider also making this an array of values from EPA table
     # TODO: Make EASIUR costs an array of seasonal costs
-    cost_ton_SO2::Real # Obtain from EASIUR TODO: make cost_ton_SO2
-    cost_ton_NOx::Real # Obtain from EASIUR
+    # TODO: Automatically populate these using EASIUR python code (https://drive.google.com/drive/folders/1HQtREJ5MBDBM3wXYJNvQA_qkapZc91bX)
+    cost_ton_SO2::Array{Real,1} # From EASIUR. Array values corresponds to a season [Winter, Spring, Summer, Fall]
+    cost_ton_NOx::Array{Real,1} # From EASIUR. Array values corresponds to a season [Winter, Spring, Summer, Fall]
 
 end
 
 function Emissions(;
-    year::Int=2021,
+    year::Int=2019,
     analysis_years::Int = 25,
 
     cost_ton_CO2::Real = 0.0, # Prev: [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-    cost_ton_SO2::Real = 0.0,
-    cost_ton_NOx::Real = 0.0,
+    cost_ton_SO2::Array{Real,1} = [0.0, 0.0, 0.0, 0.0],
+    cost_ton_NOx::Array{Real,1} = [0.0, 0.0, 0.0, 0.0],
 
     balancing_authority::Union{Missing, Int64} = missing
     )
@@ -73,7 +74,7 @@ function CreateEmissionsMatrix(emission::String, mers::DataFrame, year::Int, ana
     # Add 1 to year of each column name
     odd_names = names(odd)
     for i in 1:length(odd_names)
-        int = parse(Int64, odd_names[i][1:4])
+        int = parse(Int64, odd_names[i][1:4]) # get year
         odd_names[i] = string(int+1, "_$emission")
     end
 
