@@ -197,13 +197,13 @@ function build_reopt!(m::JuMP.AbstractModel, p::REoptInputs)
 	@expression(m, TotalHealthCost,
 		# SO2 Cost
 		npv(p.offtaker_discount_pct,
-			[p.emissions.cost_lb_SO2 * sum(m[:net_load][ts]
-			* p.emissions.lb_kWh_SO2[ts, yr] for ts in p.time_steps)
+			[p.emissions.cost_ton_SO2 * sum(m[:net_load][ts]
+			* p.emissions.ton_kWh_SO2[ts, yr] for ts in p.time_steps)
 			for yr in 1:p.analysis_years] )
 		# NOx Cost
 		+ npv(p.offtaker_discount_pct,
-			[p.emissions.cost_lb_NOx * sum(m[:net_load][ts]
-			* p.emissions.lb_kWh_NOx[ts, yr] for ts in p.time_steps)
+			[p.emissions.cost_ton_NOx * sum(m[:net_load][ts]
+			* p.emissions.ton_kWh_NOx[ts, yr] for ts in p.time_steps)
 			for yr in 1:p.analysis_years] )
 	)
 
@@ -423,11 +423,11 @@ function reopt_results(m::JuMP.AbstractModel, p::REoptInputs)
 	results["pwf_e"] = p.pwf_e
 	results["VoLL"] = p.VoLL
 	results["ton_kWh_CO2"] = p.emissions.ton_kWh_CO2
-	results["lb_kWh_SO2"] = p.emissions.lb_kWh_SO2
-	results["lb_kWh_NOx"] = p.emissions.lb_kWh_NOx
+	results["ton_kWh_SO2"] = p.emissions.ton_kWh_SO2
+	results["ton_kWh_NOx"] = p.emissions.ton_kWh_NOx
 	results["cost_ton_CO2"] = p.emissions.cost_ton_CO2
-	results["cost_lb_NOx"] = p.emissions.cost_lb_NOx
-	results["cost_lb_SO2"] = p.emissions.cost_lb_SO2
+	results["cost_ton_NOx"] = p.emissions.cost_ton_NOx
+	results["cost_ton_SO2"] = p.emissions.cost_ton_SO2
 
 	if !isempty(p.pvtechs)
     for t in p.pvtechs

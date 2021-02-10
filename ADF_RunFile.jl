@@ -21,8 +21,8 @@ results_techs = run_reopt(m, "/Users/amandafarthing1/.julia/dev/REoptLite/test/s
 savelist = [
   ## Select inputs
   "cost_ton_CO2",
-  "cost_lb_NOx",
-  "cost_lb_SO2",
+  "cost_ton_NOx",
+  "cost_ton_SO2",
   #"outage_durations",
   #"outage_probabilities",
   #"outage_start_timesteps",

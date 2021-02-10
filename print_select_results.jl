@@ -46,7 +46,7 @@ printlist = [
 
 print("\n \n")
 for key in printlist
-    #print(key," : ", results[key], "\n")
-     print(results[key],"\n")
+    print(key," : ", results_techs[key], "\n")
+    #print(results_techs[key],"\n")
      #print(key, "\n")
 end

@@ -49,8 +49,8 @@
     },
     "Emissions": {
         "cost_ton_CO2": 40.0,
-        "cost_lb_NOx": 7.20,
-        "cost_lb_SO2": 14.75,
+        "cost_ton_NOx": 7.20,
+        "cost_ton_SO2": 14.75,
         "balancing_authority": 123
     }
 }

@@ -3,13 +3,13 @@
 struct Emissions
 
     ton_kWh_CO2::Array{Real,2} # 8760 x n years [tonnes / kWh]
-    lb_kWh_SO2::Array{Real,2} # [lb/kWh] TODO: make this ton/kWh to match EASIUR units
-    lb_kWh_NOx::Array{Real,2} # [lb/kWh] TODO: make this ton/kWh to match EASIUR units
+    ton_kWh_SO2::Array{Real,2} # [tonnes/kWh]
+    ton_kWh_NOx::Array{Real,2} # [tonnes/kWh]
 
     cost_ton_CO2::Real # TODO: Consider also making this an array of values from EPA table
     # TODO: Make EASIUR costs an array of seasonal costs
-    cost_lb_SO2::Real # Obtain from EASIUR TODO: make cost_ton_SO2
-    cost_lb_NOx::Real # Obtain from EASIUR
+    cost_ton_SO2::Real # Obtain from EASIUR TODO: make cost_ton_SO2
+    cost_ton_NOx::Real # Obtain from EASIUR
 
 end
 
@@ -18,8 +18,8 @@ function Emissions(;
     analysis_years::Int = 25,
 
     cost_ton_CO2::Real = 0.0, # Prev: [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-    cost_lb_SO2::Real = 0.0,
-    cost_lb_NOx::Real = 0.0,
+    cost_ton_SO2::Real = 0.0,
+    cost_ton_NOx::Real = 0.0,
 
     balancing_authority::Union{Missing, Int64} = missing
     )
@@ -28,8 +28,8 @@ function Emissions(;
         if (balancing_authority==0) # when Emissions inputs are missing
                 # Set arrays to zero
                 ton_kWh_CO2 = zeros(Float64, 8760, analysis_years)
-                lb_kWh_SO2 = zeros(Float64, 8760, analysis_years)
-                lb_kWh_NOx = zeros(Float64, 8760, analysis_years)
+                ton_kWh_SO2 = zeros(Float64, 8760, analysis_years)
+                ton_kWh_NOx = zeros(Float64, 8760, analysis_years)
 
         else
         # TODO set path with joinpath(dirname(pathof(REoptLite)), "..", "data") once REopt is a pkg
@@ -43,8 +43,8 @@ function Emissions(;
 
         # TODO: add error check for year (must be between 2018 and (2050-analysis years))
         ton_kWh_CO2 = CreateEmissionsMatrix("CO2", mers, year, analysis_years)
-        lb_kWh_SO2 = CreateEmissionsMatrix("SO2", mers, year, analysis_years)
-        lb_kWh_NOx = CreateEmissionsMatrix("NOx", mers, year, analysis_years)
+        ton_kWh_SO2 = CreateEmissionsMatrix("SO2", mers, year, analysis_years)
+        ton_kWh_NOx = CreateEmissionsMatrix("NOx", mers, year, analysis_years)
 
         end
 
@@ -54,12 +54,12 @@ function Emissions(;
 
     Emissions(
         ton_kWh_CO2,
-        lb_kWh_SO2,
-        lb_kWh_NOx,
+        ton_kWh_SO2,
+        ton_kWh_NOx,
 
         cost_ton_CO2,
-        cost_lb_SO2,
-        cost_lb_NOx
+        cost_ton_SO2,
+        cost_ton_NOx
     )
 
 end
