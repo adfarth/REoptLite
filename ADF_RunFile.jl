@@ -5,8 +5,8 @@ using REoptLite
 using CSV, DataFrames
 
 # Scenario file names for BAU and comparison case
-bau_file = "aa_LargeOffice_b_bau"
-techs_file = "aa_LargeOffice_b_techs"
+bau_file = "aa_LargeOffice_brhc_bau"
+techs_file = "aa_LargeOffice_brhc_techs"
 
 # Name of saved file
 savename = bau_file[1:end-4] # "aa_LargeOffice_brhc_24hr_VoLL100_CLP20_grid_can_charge"

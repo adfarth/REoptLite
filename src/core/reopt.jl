@@ -297,12 +297,12 @@ function build_reopt!(m::JuMP.AbstractModel, p::REoptInputs)
 	);
 	# Cost of CO2 emissions from electricity consumption (ADF)
 	if p.include_climate_in_obj # if user selects to include climate in objective
-		add_to_expression!(TotalCO2Cost)
+		add_to_expression!(Costs, TotalCO2Cost)
 	end
 
 	# Cost of SO2 and NOx emissions from electricity consumption (ADF)
 	if p.include_health_in_obj # if user selects to include climate in objective
-		add_to_expression!(TotalHealthCost)
+		add_to_expression!(Costs, TotalHealthCost)
 	end
 
 	if p.include_resilience_in_obj 	# ADF
