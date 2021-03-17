@@ -293,8 +293,7 @@ function build_reopt!(m::JuMP.AbstractModel, p::REoptInputs)
         m[:TotalGenFuelCharges] * (1 - p.offtaker_tax_pct) +
 
 		# Utility Bill, tax deductible for offtaker
-		(TotalEnergyChargesUtil + TotalDemandCharges + TotalExportBenefit + TotalFixedCharges + 0.999 * m[:MinChargeAdder]) * (1 - p.offtaker_tax_pct) +
-
+		(TotalEnergyChargesUtil + TotalDemandCharges + TotalExportBenefit + TotalFixedCharges + 0.999 * m[:MinChargeAdder]) * (1 - p.offtaker_tax_pct)
 	);
 	# Cost of CO2 emissions from electricity consumption (ADF)
 	if p.include_climate_in_obj # if user selects to include climate in objective

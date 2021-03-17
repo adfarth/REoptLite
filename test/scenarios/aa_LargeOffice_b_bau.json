@@ -54,9 +54,9 @@
         "offtaker_tax_pct": 0.0,
         "owner_discount_pct": 0.08,
         "offtaker_discount_pct": 0.03,
-        "include_climate_in_obj"=false,
-        "include_health_in_obj"=false,
-        "include_resilience_in_obj"=false
+        "include_climate_in_obj": false,
+        "include_health_in_obj": false,
+        "include_resilience_in_obj": false
     },
     "Emissions": {
         "cost_ton_CO2": 52.0,
