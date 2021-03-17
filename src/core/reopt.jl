@@ -168,7 +168,7 @@ function build_reopt!(m::JuMP.AbstractModel, p::REoptInputs)
 		# TODO: Figure out what's happening with dvStorageExport
 		len = length(p.time_steps)
 		@expression(m, net_load[ts=1:len], (m[:dvGridPurchase][ts]
-			## - sum( m[:dvStorageExport][b,u,ts] for b in p.storage.can_grid_charge, u in p.storage.export_bins)
+			- sum( m[:dvStorageExport][b,u,ts] for b in p.storage.can_grid_charge, u in p.storage.export_bins)
 			- sum( m[:dvNEMexport][t, ts] for t in p.techs)
 			- sum( m[:dvWHLexport][t, ts]  for t in p.techs))
 		)
@@ -197,40 +197,31 @@ function build_reopt!(m::JuMP.AbstractModel, p::REoptInputs)
 	# Seasonal costs from EASIUR. NOTE: This might only work with hourly timesteps
 	@expression(m, TotalHealthCost,
 		# SO2 Cost
-		##npv(p.offtaker_discount_pct,
-		##	[p.emissions.cost_ton_SO2 * sum(m[:net_load][ts]
-		##	* p.emissions.ton_kWh_SO2[ts, yr] for ts in p.time_steps)
-		##	for yr in 1:p.analysis_years] )
-		npv(p.offtaker_discount_pct,
-			[(
-			# Winter
-			p.emissions.cost_ton_SO2[1] * sum(m[:net_load][ts] * p.emissions.ton_kWh_SO2[ts, yr] for ts in 1:2160)
-			# Spring
-			+ p.emissions.cost_ton_SO2[2] * sum(m[:net_load][ts] * p.emissions.ton_kWh_SO2[ts, yr] for ts in 2161:4344)
-			# Summer
-			+ p.emissions.cost_ton_SO2[3] * sum(m[:net_load][ts] * p.emissions.ton_kWh_SO2[ts, yr] for ts in 4345:6552)
-			# Fall
-			+ p.emissions.cost_ton_SO2[4] * sum(m[:net_load][ts] * p.emissions.ton_kWh_SO2[ts, yr] for ts in 6553:8760)
-			)
-			for yr in 1:p.analysis_years] )
-		# NOx Cost
-		##+ npv(p.offtaker_discount_pct,
-		##	[p.emissions.cost_ton_NOx * sum(m[:net_load][ts]
-		##	* p.emissions.ton_kWh_NOx[ts, yr] for ts in p.time_steps)
-		##	for yr in 1:p.analysis_years] )
-		+ npv(p.offtaker_discount_pct,
-			[(
-			# Winter
-			p.emissions.cost_ton_NOx[1] * sum(m[:net_load][ts] * p.emissions.ton_kWh_NOx[ts, yr] for ts in 1:2160)
-			# Spring
-			+ p.emissions.cost_ton_NOx[2] * sum(m[:net_load][ts] * p.emissions.ton_kWh_NOx[ts, yr] for ts in 2161:4344)
-			# Summer
-			+ p.emissions.cost_ton_NOx[3] * sum(m[:net_load][ts] * p.emissions.ton_kWh_NOx[ts, yr] for ts in 4345:6552)
-			# Fall
-			+ p.emissions.cost_ton_NOx[4] * sum(m[:net_load][ts] * p.emissions.ton_kWh_NOx[ts, yr] for ts in 6553:8760)
-			)
-			for yr in 1:p.analysis_years] )
-	)
+			npv(p.offtaker_discount_pct,
+				[(
+				# Winter
+				p.emissions.cost_ton_SO2[1] * sum(m[:net_load][ts] * p.emissions.ton_kWh_SO2[ts, yr] for ts in 1:2160)
+				# Spring
+				+ p.emissions.cost_ton_SO2[2] * sum(m[:net_load][ts] * p.emissions.ton_kWh_SO2[ts, yr] for ts in 2161:4344)
+				# Summer
+				+ p.emissions.cost_ton_SO2[3] * sum(m[:net_load][ts] * p.emissions.ton_kWh_SO2[ts, yr] for ts in 4345:6552)
+				# Fall
+				+ p.emissions.cost_ton_SO2[4] * sum(m[:net_load][ts] * p.emissions.ton_kWh_SO2[ts, yr] for ts in 6553:8760)
+				)
+				for yr in 1:p.analysis_years] )
+			+ npv(p.offtaker_discount_pct,
+				[(
+				# Winter
+				p.emissions.cost_ton_NOx[1] * sum(m[:net_load][ts] * p.emissions.ton_kWh_NOx[ts, yr] for ts in 1:2160)
+				# Spring
+				+ p.emissions.cost_ton_NOx[2] * sum(m[:net_load][ts] * p.emissions.ton_kWh_NOx[ts, yr] for ts in 2161:4344)
+				# Summer
+				+ p.emissions.cost_ton_NOx[3] * sum(m[:net_load][ts] * p.emissions.ton_kWh_NOx[ts, yr] for ts in 4345:6552)
+				# Fall
+				+ p.emissions.cost_ton_NOx[4] * sum(m[:net_load][ts] * p.emissions.ton_kWh_NOx[ts, yr] for ts in 6553:8760)
+				)
+				for yr in 1:p.analysis_years] )
+		)
 
 	if !isempty(p.elecutil.outage_durations)
 		add_dv_UnservedLoad_constraints(m,p)
@@ -453,6 +444,7 @@ function reopt_results(m::JuMP.AbstractModel, p::REoptInputs)
 	results["cost_ton_CO2"] = p.emissions.cost_ton_CO2
 	results["cost_ton_NOx"] = p.emissions.cost_ton_NOx
 	results["cost_ton_SO2"] = p.emissions.cost_ton_SO2
+	results["energy_rates"] = p.etariff.energy_rates
 
 	if !isempty(p.pvtechs)
     for t in p.pvtechs
@@ -650,6 +642,7 @@ function add_outage_results(m, p, r::Dict)
 	end
 	r["storage_upgraded"] = value(m[:binMGStorageUsed])
 
+""" # ADF temporarily suppressing bc throwing error #
 	if !isempty(p.pvtechs)
 		for t in p.pvtechs
 
@@ -690,6 +683,7 @@ function add_outage_results(m, p, r::Dict)
 			r[string("mg", t, "toLoad")] = round.(value.(PVtoLoad), digits=3)
 		end
 	end
+"""
 
 	if !isempty(p.gentechs)
 		for t in p.gentechs
@@ -737,13 +731,11 @@ function add_outage_results(m, p, r::Dict)
 	## Adding microcgrid cost results (ADF)
 	# TODO: Compare to new results reported above and consider removing
 	if !isempty(p.elecutil.outage_durations)
-		r["outage_start_timesteps"] = round.(value.(p.elecutil.outage_start_timesteps, digits=1))
-		r["outage_durations"] = round.(value.(p.elecutil.outage_durations, digits=3))
-		r["outage_probabilities"] = round.(value.(p.elecutil.outage_probabilities, digits=1))
+		r["outage_start_timesteps"] = p.elecutil.outage_start_timesteps
+		r["outage_durations"] = p.elecutil.outage_durations
 
 		r["mgTotalTechUpgradeCost"] = round(value(m[:mgTotalTechUpgradeCost]), digits=4)
 		r["dvMGStorageUpgradeCost"] = round(value(m[:dvMGStorageUpgradeCost]), digits=4)
-		r["ExpectedMGFuelCost"] = round(value(m[:ExpectedMGFuelCost]), digits=4)
 	end
 
 end

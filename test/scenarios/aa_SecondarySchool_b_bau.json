@@ -7,6 +7,11 @@
         "min_resil_timesteps": 0,
         "mg_tech_sizes_equal_grid_sizes": true
     },
+    "ElectricUtility": {
+        "outage_durations": [24],
+        "outage_probabilities": [1.0],
+        "outage_start_timesteps": [1, 744, 1440, 2184, 2904, 3648, 4368, 5112, 5856, 6576, 7320, 8040]
+    },
     "PV": {
         "existing_kw": 0.0,
         "kw_per_square_foot": 0.01,
@@ -35,7 +40,7 @@
         "NEM": true
     },
     "Storage": {
-        "can_grid_charge": false,
+        "can_grid_charge": true,
         "can_grid_export": false,
         "total_itc_pct": 0.26,
         "macrs_option_years": 5,

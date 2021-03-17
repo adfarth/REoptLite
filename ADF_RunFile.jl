@@ -5,15 +5,16 @@ using REoptLite
 using CSV, DataFrames
 
 # Scenario file names for BAU and comparison case
-bau_file = "aa_MidriseApartment_bhc_bau"
-techs_file = "aa_MidriseApartment_bhc_techs"
+bau_file = "aa_LargeOffice_bhc_bau"
+techs_file = "aa_LargeOffice_bhc_techs"
 
 # Name of saved file
-savename = bau_file[1:end-4]
+savename = bau_file[1:end-4] # "aa_LargeOffice_brhc_24hr_VoLL100_CLP20_grid_can_charge"
 
-# Run optimizations
+# Run optimizations (BAU and Investment Case)
 m = Model(CPLEX.Optimizer)
 results_bau = run_reopt(m, "/Users/amandafarthing1/.julia/dev/REoptLite/test/scenarios/$bau_file.json")
+
 m = Model(CPLEX.Optimizer)
 results_techs = run_reopt(m, "/Users/amandafarthing1/.julia/dev/REoptLite/test/scenarios/$techs_file.json")
 
@@ -23,9 +24,10 @@ savelist = [
   "cost_ton_CO2",
   "cost_ton_NOx",
   "cost_ton_SO2",
-  #"outage_durations",
-  #"outage_probabilities",
-  #"outage_start_timesteps",
+  "outage_durations",
+  # "outage_probabilities",
+  "outage_start_timesteps",
+  "dvUnservedLoad",
 
   ## System sizes
   "PV_kw", "batt_kw", "batt_kwh",
@@ -42,10 +44,10 @@ savelist = [
   "TotalCO2Cost",
   "TotalHealthCost",
   ## Outage-related costs in the objective
-  #"expected_outage_cost",
-  #"mgTotalTechUpgradeCost",
-  #"dvMGStorageUpgradeCost",
-  #"ExpectedMGFuelCost"
+  "expected_outage_cost",
+  "mgTotalTechUpgradeCost",
+  "dvMGStorageUpgradeCost",
+  # "ExpectedMGFuelCost"
   ]
 
 # Save results in dataframe
@@ -59,4 +61,14 @@ df = DataFrame(d)
 df[!,"npv"] = df[!,"bau"] - df[!,"techs"]
 
 # Write results to csv
-CSV.write("/Volumes/GoogleDrive/My Drive/0_Michigan/Master's Thesis/Results/NREL_Pres/$savename.csv", df)
+CSV.write("/Volumes/GoogleDrive/My Drive/0_Michigan/Master's Thesis/Results/Sensitivity_2020_2050_mers/$savename.csv", df) # $savename (file name)
+
+
+# Write net_load in bau and techs case to csv
+d2 = Dict("net_load_bau"=>results_bau["net_load"],
+          "net_load_techs"=>results_techs["net_load"]
+)
+df2 = DataFrame(d2)
+
+# Write results to csv
+CSV.write("/Volumes/GoogleDrive/My Drive/0_Michigan/Master's Thesis/Results/Sensitivity_2020_2050_mers/$savename net_load.csv", df2) # $savename (file name)

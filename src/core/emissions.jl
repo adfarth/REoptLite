@@ -7,22 +7,22 @@ struct Emissions
     ton_kWh_NOx::Array{Real,2} # 8760 x n years [tonnes/kWh]
 
     cost_ton_CO2::Real # TODO: Consider also making this an array of values from EPA table
-    # TODO: Make EASIUR costs an array of seasonal costs
     # TODO: Automatically populate these using EASIUR python code (https://drive.google.com/drive/folders/1HQtREJ5MBDBM3wXYJNvQA_qkapZc91bX)
-    cost_ton_SO2::Array{Real,1} # From EASIUR. Array values corresponds to a season [Winter, Spring, Summer, Fall]
-    cost_ton_NOx::Array{Real,1} # From EASIUR. Array values corresponds to a season [Winter, Spring, Summer, Fall]
+    # NOTE: I was getting an error when using type Real or Float. The input was being interpreted as type (Any)
+    # NOTE (cont): I also get an error when only allowing type Any, if the user does not supply an Emissions dict. I'm not sure why type Float64 isn't matching type(Any)
+    cost_ton_SO2::Union{Array{Any,1}, Array{Float64,1}} #Array{Any,1}#Array{<:Real,1} # From EASIUR. Array values corresponds to a season [Winter, Spring, Summer, Fall]
+    cost_ton_NOx::Union{Array{Any,1}, Array{Float64,1}}#Array{<:Real,1} # From EASIUR. Array values corresponds to a season [Winter, Spring, Summer, Fall]
 
 end
 
 function Emissions(;
-    year::Int=2019,
+    year::Int=2020, # start year for emissions
     analysis_years::Int = 25,
+    balancing_authority::Union{Missing, Int64} = missing,
 
-    cost_ton_CO2::Real = 0.0, # Prev: [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-    cost_ton_SO2::Array{Real,1} = [0.0, 0.0, 0.0, 0.0],
-    cost_ton_NOx::Array{Real,1} = [0.0, 0.0, 0.0, 0.0],
-
-    balancing_authority::Union{Missing, Int64} = missing
+    cost_ton_CO2::Real = 0.0, 
+    cost_ton_SO2::Union{Array{Any,1}, Array{Float64,1}}=[0.0, 0.0, 0.0, 0.0], # was <:Real
+    cost_ton_NOx::Union{Array{Any,1}, Array{Float64,1}}=[0.0, 0.0, 0.0, 0.0] # was <:Real
     )
 
     if !ismissing(balancing_authority) # make sure ba is supplied
@@ -80,7 +80,7 @@ function CreateEmissionsMatrix(emission::String, mers::DataFrame, year::Int, ana
 
     rename!(odd, odd_names)
 
-    # concat dfs
+    # concat dfs (even and odd years)
     df = hcat(even, odd)
 
     # reorder columns

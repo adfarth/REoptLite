@@ -10,18 +10,18 @@
     "PV": {
         "existing_kw": 0.0,
         "kw_per_square_foot": 0.01,
-        "macrs_bonus_pct": 0.4,
-        "cost_per_kw": 2000.0,
+        "macrs_bonus_pct": 0.0,
+        "cost_per_kw": 3000.0,
         "tilt": 42.2808,
         "azimuth": 180.0,
         "degradation_pct": 0.005,
         "macrs_option_years": 5,
-        "total_itc_pct": 0.3,
+        "total_itc_pct": 0.0,
         "module_type": 0,
         "array_type": 1,
         "om_cost_per_kw": 16.0,
         "macrs_itc_reduction": 0.5,
-        "total_rebate_per_kw": 350.0,
+        "total_rebate_per_kw": 0.0,
         "max_kw": 0.0
     },
     "ElectricLoad": {
@@ -35,25 +35,26 @@
         "NEM": true
     },
     "Storage": {
-        "can_grid_charge": false,
+        "can_grid_charge": true,
         "can_grid_export": false,
-        "total_itc_pct": 0.26,
+        "total_itc_pct": 0.0,
         "macrs_option_years": 5,
         "max_kwh": 0.0,
         "max_kw": 0.0
     },
     "Financial": {
         "analysis_years": 25,
-        "VoLL": 100.0,
+        "VoLL": 0.0,
         "two_party_ownership": false,
         "offtaker_tax_pct": 0.0,
         "owner_discount_pct": 0.08,
         "offtaker_discount_pct": 0.03
     },
     "Emissions": {
-        "cost_ton_CO2": 40.0,
-        "cost_ton_NOx": 9.26,
-        "cost_ton_SO2": 17.10,
-        "balancing_authority": 103
+        "cost_ton_CO2": 52.0,
+        "year": 2020,
+        "balancing_authority": 103,
+        "cost_ton_NOx": [33351.89, 28366.91, 11156.86, 24094.07],
+        "cost_ton_SO2": [33114.51, 53410.5, 58276.79, 34182.72]
     }
 }
