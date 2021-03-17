@@ -40,4 +40,9 @@ Base.@kwdef struct Financial
     macrs_seven_year::Array{Float64,1} = [0.1429, 0.2449, 0.1749, 0.1249, 0.0893, 0.0892, 0.0893, 0.0446]
     VoLL::Union{Array{R,1}, R} where R<:Real = 1.00
     microgrid_premium_pct::Float64 = 0.3
+
+     # allows user to still calc damages without optimizing for them (ADF)
+    include_climate_in_obj::Bool = false
+    include_health_in_obj::Bool = false
+    include_resilience_in_obj::Bool = false
 end

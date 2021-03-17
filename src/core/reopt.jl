@@ -295,14 +295,21 @@ function build_reopt!(m::JuMP.AbstractModel, p::REoptInputs)
 		# Utility Bill, tax deductible for offtaker
 		(TotalEnergyChargesUtil + TotalDemandCharges + TotalExportBenefit + TotalFixedCharges + 0.999 * m[:MinChargeAdder]) * (1 - p.offtaker_tax_pct) +
 
-		# Cost of CO2 emissions from electricity consumption (ADF)
-		TotalCO2Cost +
-
-		# Cost of SO2 and NOx emissions from electricity consumption (ADF)
-		TotalHealthCost
 	);
-	if !isempty(p.elecutil.outage_durations)
-		add_to_expression!(Costs, m[:ExpectedOutageCost] + m[:mgTotalTechUpgradeCost] + m[:dvMGStorageUpgradeCost] + m[:ExpectedMGFuelCost])
+	# Cost of CO2 emissions from electricity consumption (ADF)
+	if p.include_climate_in_obj # if user selects to include climate in objective
+		add_to_expression!(TotalCO2Cost)
+	end
+
+	# Cost of SO2 and NOx emissions from electricity consumption (ADF)
+	if p.include_health_in_obj # if user selects to include climate in objective
+		add_to_expression!(TotalHealthCost)
+	end
+
+	if p.include_resilience_in_obj 	# ADF
+		if !isempty(p.elecutil.outage_durations)
+			add_to_expression!(Costs, m[:ExpectedOutageCost] + m[:mgTotalTechUpgradeCost] + m[:dvMGStorageUpgradeCost] + m[:ExpectedMGFuelCost])
+		end
 	end
     #= Note: 0.9999*MinChargeAdder in Objective b/c when TotalMinCharge > (TotalEnergyCharges + TotalDemandCharges + TotalExportBenefit + TotalFixedCharges)
 		it is arbitrary where the min charge ends up (eg. could be in TotalDemandCharges or MinChargeAdder).

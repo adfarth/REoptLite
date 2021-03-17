@@ -75,6 +75,10 @@ struct REoptInputs
     offtaker_discount_pct::Float64 # ADF
     analysis_years::Int # ADF
 
+    include_climate_in_obj::Bool # ADF
+    include_health_in_obj::Bool # ADF
+    include_resilience_in_obj::Bool # ADF
+
 end
 
 function REoptInputs(fp::String)
@@ -153,7 +157,11 @@ function REoptInputs(s::Scenario)
 
         s.emissions, # ADF
         s.financial.offtaker_discount_pct, # ADF
-        s.financial.analysis_years # ADF
+        s.financial.analysis_years, # ADF
+
+        s.financial.include_climate_in_obj, # ADF
+        s.financial.include_health_in_obj, # ADF
+        s.financial.include_resilience_in_obj # ADF
 
     )
 end

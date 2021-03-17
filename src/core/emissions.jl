@@ -20,7 +20,7 @@ function Emissions(;
     analysis_years::Int = 25,
     balancing_authority::Union{Missing, Int64} = missing,
 
-    cost_ton_CO2::Real = 0.0, 
+    cost_ton_CO2::Real = 0.0,
     cost_ton_SO2::Union{Array{Any,1}, Array{Float64,1}}=[0.0, 0.0, 0.0, 0.0], # was <:Real
     cost_ton_NOx::Union{Array{Any,1}, Array{Float64,1}}=[0.0, 0.0, 0.0, 0.0] # was <:Real
     )

@@ -5,8 +5,8 @@ using REoptLite
 using CSV, DataFrames
 
 # Scenario file names for BAU and comparison case
-bau_file = "aa_LargeOffice_bhc_bau"
-techs_file = "aa_LargeOffice_bhc_techs"
+bau_file = "aa_LargeOffice_b_bau"
+techs_file = "aa_LargeOffice_b_techs"
 
 # Name of saved file
 savename = bau_file[1:end-4] # "aa_LargeOffice_brhc_24hr_VoLL100_CLP20_grid_can_charge"
@@ -24,10 +24,10 @@ savelist = [
   "cost_ton_CO2",
   "cost_ton_NOx",
   "cost_ton_SO2",
-  "outage_durations",
+  # "outage_durations",
   # "outage_probabilities",
-  "outage_start_timesteps",
-  "dvUnservedLoad",
+  #"outage_start_timesteps",
+  #"dvUnservedLoad",
 
   ## System sizes
   "PV_kw", "batt_kw", "batt_kwh",
@@ -61,9 +61,9 @@ df = DataFrame(d)
 df[!,"npv"] = df[!,"bau"] - df[!,"techs"]
 
 # Write results to csv
-CSV.write("/Volumes/GoogleDrive/My Drive/0_Michigan/Master's Thesis/Results/Sensitivity_2020_2050_mers/$savename.csv", df) # $savename (file name)
+CSV.write("/Volumes/GoogleDrive/My Drive/0_Michigan/Master's Thesis/Results/USA/$savename.csv", df) # $savename (file name)
 
-
+"""
 # Write net_load in bau and techs case to csv
 d2 = Dict("net_load_bau"=>results_bau["net_load"],
           "net_load_techs"=>results_techs["net_load"]
@@ -72,3 +72,4 @@ df2 = DataFrame(d2)
 
 # Write results to csv
 CSV.write("/Volumes/GoogleDrive/My Drive/0_Michigan/Master's Thesis/Results/Sensitivity_2020_2050_mers/$savename net_load.csv", df2) # $savename (file name)
+"""
