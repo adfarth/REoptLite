@@ -102,7 +102,7 @@ function add_MG_production_constraints(m,p)
 		p.production_factor[t, tz+ts] * p.levelization_factor[t] * m[:dvMGRatedProduction][t, s, tz, ts]
     )
 
-    @constraint(m, [t in p.techs, s in p.elecutil.scenarios, tz in p.elecutil.outage_start_timesteps, ts in p.elecutil.outage_timesteps], 
+    @constraint(m, [t in p.techs, s in p.elecutil.scenarios, tz in p.elecutil.outage_start_timesteps, ts in p.elecutil.outage_timesteps],
         m[:dvMGRatedProduction][t, s, tz, ts] >= 0
     )
 

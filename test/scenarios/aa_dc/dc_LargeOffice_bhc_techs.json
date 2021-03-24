@@ -1,0 +1,56 @@
+{
+    "Site": {
+        "latitude": 38.9072,
+        "longitude": -77.0369,
+        "roof_squarefeet": 20000.0,
+        "land_acres": 0.0,
+        "min_resil_timesteps": 0,
+        "mg_tech_sizes_equal_grid_sizes": true
+    },
+    "PV": {
+        "existing_kw": 0.0,
+        "kw_per_square_foot": 0.01,
+        "macrs_bonus_pct": 0.4,
+        "cost_per_kw": 2000.0,
+        "tilt": 38.9072,
+        "azimuth": 180.0,
+        "degradation_pct": 0.005,
+        "macrs_option_years": 5,
+        "total_itc_pct": 0.3,
+        "module_type": 0,
+        "array_type": 1,
+        "om_cost_per_kw": 16.0,
+        "macrs_itc_reduction": 0.5,
+        "total_rebate_per_kw": 350.0
+    },
+    "ElectricLoad": {
+        "critical_load_pct": 0.0,
+        "doe_reference_name": "LargeOffice",
+        "annual_kwh": 5000000.0,
+        "city": "Baltimore"
+    },
+    "ElectricTariff": {
+        "urdb_label": "5b86e1445457a3a4178b4568",
+        "NEM": true
+    },
+    "Storage": {
+        "can_grid_charge": false,
+        "can_grid_export": false,
+        "total_itc_pct": 0.26,
+        "macrs_option_years": 5
+    },
+    "Financial": {
+        "analysis_years": 25,
+        "VoLL": 100.0,
+        "two_party_ownership": false,
+        "offtaker_tax_pct": 0.0,
+        "owner_discount_pct": 0.08,
+        "offtaker_discount_pct": 0.03
+    },
+    "Emissions": {
+        "cost_ton_CO2": 40.0,
+        "cost_ton_NOx": 7.20,
+        "cost_ton_SO2": 14.75,
+        "balancing_authority": 123
+    }
+}

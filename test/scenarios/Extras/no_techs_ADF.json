@@ -1,0 +1,14 @@
+{
+    "Site": {
+        "longitude": -118.1164613,
+        "latitude": 34.5794343
+    },
+    "ElectricLoad": {
+        "doe_reference_name": "Hospital",
+        "city": "Albuquerque"
+    },
+    "ElectricTariff": {
+        "urdb_label": "5ed6c1a15457a3367add15ae"
+    }
+
+}

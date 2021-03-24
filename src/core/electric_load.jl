@@ -33,7 +33,7 @@ mutable struct ElectricLoad  # mutable to adjust (critical_)loads_kw based off o
     critical_loads_kw::Array{Real,1}
     loads_kw_is_net::Bool
     critical_loads_kw_is_net::Bool
-    
+
     function ElectricLoad(;
         loads_kw::Union{Missing, Array{<:Real,1}} = missing,
         year::Int = 2019,
@@ -46,7 +46,7 @@ mutable struct ElectricLoad  # mutable to adjust (critical_)loads_kw based off o
         critical_loads_kw_is_net::Bool = false,
         critical_load_pct::Real = 0.5
         )
-        
+
         if !ismissing(loads_kw)
             if ismissing(critical_loads_kw)
                 critical_loads_kw = critical_load_pct * loads_kw
@@ -57,8 +57,8 @@ mutable struct ElectricLoad  # mutable to adjust (critical_)loads_kw based off o
                 critical_loads_kw,
                 loads_kw_is_net,
                 critical_loads_kw_is_net
-            )     
-    
+            )
+
         elseif !ismissing(doe_reference_name)  && !ismissing(city)
             # NOTE: must use year that starts on Sunday with DOE reference doe_ref_profiles
             year = 2017
@@ -73,7 +73,7 @@ mutable struct ElectricLoad  # mutable to adjust (critical_)loads_kw based off o
                 loads_kw_is_net,
                 critical_loads_kw_is_net
             )
-            
+
         else
             error("Cannot construct ElectricLoad. You must provide either loads_kw or [doe_reference_name, city].")
         end
