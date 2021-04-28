@@ -1,0 +1,18 @@
+Errors while running USA_Scenarios
+- (Baltimore warehouse_brc ?)
+    - ArgumentError: indexed assignment with a single value to many locations is not supported; perhaps use broadcasting `.=` instead?
+setindex_shape_check(::String, ::Int64, ::Int64) at indices.jl:258
+    - Re-ran and it went away...?
+
+- Minneapolis hosp, Minneapolis school, Minneapolis warehouse, Phoenix warehouse:
+    - ┌ Warning: Using average rate in tier due to exotic units of
+│   energy_tier["unit"] = "kWh/kW"
+└ @ REoptLite ~/.julia/dev/REoptLite/src/core/urdb.jl:212
+┌ Warning: Using average rate in tier due to exotic units of
+│   energy_tier["unit"] = "kWh/kW"
+
+- Phoenix school, Phoenix hosp, Phoenix warehouse:
+    - Warning: TOU demand rate contains tiers. Using the last tier!
+
+- Atlanta hosp
+    - Warning: energy periods contain different numbers of tiers, using limits of period with most tiers

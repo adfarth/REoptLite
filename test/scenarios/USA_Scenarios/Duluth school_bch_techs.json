@@ -1,0 +1,77 @@
+{
+    "ElectricUtility": {
+        "outage_durations": [],
+        "outage_probabilities": [
+            1.0
+        ],
+        "outage_start_timesteps": []
+    },
+    "ElectricTariff": {
+        "NEM": true,
+        "urdb_label": "539fb3eeec4f024bc1dbe389"
+    },
+    "Site": {
+        "latitude": 46.7867,
+        "min_resil_timesteps": 0,
+        "longitude": -92.1005,
+        "roof_squarefeet": 52700.0,
+        "mg_tech_sizes_equal_grid_sizes": true,
+        "land_acres": 0.0
+    },
+    "ElectricLoad": {
+        "city": "Duluth",
+        "doe_reference_name": "SecondarySchool",
+        "critical_load_pct": 0.6
+    },
+    "PV": {
+        "array_type": 1,
+        "macrs_itc_reduction": 0.0,
+        "module_type": 0,
+        "tilt": 10.0,
+        "kw_per_square_foot": 0.01,
+        "macrs_option_years": 5,
+        "macrs_bonus_pct": 0.0,
+        "existing_kw": 0.0,
+        "total_itc_pct": 0.0,
+        "azimuth": 180.0,
+        "om_cost_per_kw": 16.0,
+        "cost_per_kw": 2300.0,
+        "total_rebate_per_kw": 0.0
+    },
+    "Storage": {
+        "macrs_option_years": 5,
+        "can_grid_charge": true,
+        "total_itc_pct": 0.0,
+        "can_grid_export": false,
+        "macrs_bonus_pct": 0.0
+    },
+    "Financial": {
+        "owner_discount_pct": 0.083,
+        "include_climate_in_obj": true,
+        "analysis_years": 25,
+        "offtaker_discount_pct": 0.083,
+        "two_party_ownership": false,
+        "include_health_in_obj": true,
+        "offtaker_tax_pct": 0.0,
+        "elec_cost_escalation_pct": 0.023,
+        "VoLL": 72.0,
+        "include_resilience_in_obj": false
+    },
+    "Emissions": {
+        "cost_ton_SO2": [
+            33351.89,
+            35963.07,
+            41660.19,
+            33114.51
+        ],
+        "balancing_authority": 43,
+        "year": 2021,
+        "cost_ton_NOx": [
+            30978.09,
+            5554.692,
+            3584.438,
+            9696.973
+        ],
+        "cost_ton_CO2": 52.0
+    }
+}

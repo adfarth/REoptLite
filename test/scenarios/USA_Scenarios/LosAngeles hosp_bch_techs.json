@@ -1,0 +1,77 @@
+{
+    "ElectricUtility": {
+        "outage_durations": [],
+        "outage_probabilities": [
+            1.0
+        ],
+        "outage_start_timesteps": []
+    },
+    "ElectricTariff": {
+        "NEM": true,
+        "urdb_label": "5c8180d77bece2299eceb3eb"
+    },
+    "Site": {
+        "latitude": 34.0522,
+        "min_resil_timesteps": 0,
+        "longitude": -118.2437,
+        "roof_squarefeet": 24100.0,
+        "mg_tech_sizes_equal_grid_sizes": true,
+        "land_acres": 0.0
+    },
+    "ElectricLoad": {
+        "city": "LosAngeles",
+        "doe_reference_name": "Hospital",
+        "critical_load_pct": 0.85
+    },
+    "PV": {
+        "array_type": 1,
+        "macrs_itc_reduction": 0.0,
+        "module_type": 0,
+        "tilt": 10.0,
+        "kw_per_square_foot": 0.01,
+        "macrs_option_years": 5,
+        "macrs_bonus_pct": 0.0,
+        "existing_kw": 0.0,
+        "total_itc_pct": 0.0,
+        "azimuth": 180.0,
+        "om_cost_per_kw": 16.0,
+        "cost_per_kw": 2300.0,
+        "total_rebate_per_kw": 0.0
+    },
+    "Storage": {
+        "macrs_option_years": 5,
+        "can_grid_charge": true,
+        "total_itc_pct": 0.0,
+        "can_grid_export": false,
+        "macrs_bonus_pct": 0.0
+    },
+    "Financial": {
+        "owner_discount_pct": 0.083,
+        "include_climate_in_obj": true,
+        "analysis_years": 25,
+        "offtaker_discount_pct": 0.083,
+        "two_party_ownership": false,
+        "include_health_in_obj": true,
+        "offtaker_tax_pct": 0.0,
+        "elec_cost_escalation_pct": 0.023,
+        "VoLL": 140.0,
+        "include_resilience_in_obj": false
+    },
+    "Emissions": {
+        "cost_ton_SO2": [
+            19583.85,
+            46407.79,
+            47357.31,
+            22669.79
+        ],
+        "balancing_authority": 10,
+        "year": 2021,
+        "cost_ton_NOx": [
+            13530.66,
+            36200.45,
+            21245.51,
+            30859.4
+        ],
+        "cost_ton_CO2": 52.0
+    }
+}

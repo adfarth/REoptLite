@@ -1,0 +1,52 @@
+{
+    "Site": {
+        "land_acres": 0.0,
+        "min_resil_timesteps": 0,
+        "mg_tech_sizes_equal_grid_sizes": true
+    },
+    "ElectricUtility": {
+        "outage_durations": [3],
+        "outage_probabilities": [1.0]
+    },
+    "PV": {
+        "existing_kw": 0.0,
+        "kw_per_square_foot": 0.01,
+        "cost_per_kw": 2300.0,
+        "om_cost_per_kw": 16.0,
+        "tilt": 10.0,
+        "azimuth": 180.0,
+        "module_type": 0,
+        "array_type": 1,
+        "total_itc_pct": 0.0,
+        "macrs_option_years": 5,
+        "macrs_bonus_pct": 0.0,
+        "macrs_itc_reduction": 0.0,
+        "total_rebate_per_kw": 0.0
+    },
+    "ElectricLoad": {
+
+    },
+    "ElectricTariff": {
+        "NEM": true
+    },
+    "Storage": {
+        "can_grid_charge": true,
+        "can_grid_export": false,
+        "total_itc_pct": 0.0,
+        "macrs_option_years": 5,
+        "macrs_bonus_pct": 0.0
+    },
+    "Financial": {
+        "analysis_years": 25,
+        "two_party_ownership": false,
+        "offtaker_tax_pct": 0.0,
+        "owner_discount_pct": 0.083,
+        "offtaker_discount_pct": 0.083,
+        "elec_cost_escalation_pct": 0.023
+    },
+    "Emissions": {
+        "cost_ton_CO2": 52.0,
+        "year": 2021
+    }
+
+}

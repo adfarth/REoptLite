@@ -87,7 +87,7 @@ function Scenario(d::Dict)
     electric_load = ElectricLoad(; dictkeys_tosymbols(d["ElectricLoad"])...)
 
     electric_tariff = ElectricTariff(; dictkeys_tosymbols(d["ElectricTariff"])...,
-                                       year=electric_load.year # why does this get sent 2017 as the year? (ADF)
+                                       year=electric_load.year
                                     )
 
     if haskey(d, "Generator")

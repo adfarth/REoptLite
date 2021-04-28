@@ -1,0 +1,32 @@
+{
+    "ElectricTariff": {
+        "urdb_label": "58b0df665457a3891d04913c"
+    },
+    "Site": {
+        "latitude": 39.7407,
+        "longitude": -105.1686,
+        "roof_squarefeet": 0.0,
+        "land_acres": 0.0
+    },
+    "ElectricLoad": {
+        "city": "Albuquerque",
+        "doe_reference_name": "Warehouse",
+        "critical_load_pct": 0.1
+    },
+    "PV": {
+        "existing_kw": 0.0,
+        "max_kw": 0.0
+    },
+    "Storage": {
+        "can_grid_charge": false,
+        "max_kw": 0.0,
+        "max_kwh": 0.0
+    },
+    "Financial": {
+        "owner_discount_pct": 0.1,
+        "offtaker_discount_pct": 0.03,
+        "two_party_ownership": true,
+        "offtaker_tax_pct": 0.0,
+        "VoLL": 4.0
+    }
+}

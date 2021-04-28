@@ -432,12 +432,12 @@ function reopt_results(m::JuMP.AbstractModel, p::REoptInputs)
 	## Report Net load in each ts (ADF)
 	## Note: the storage part of this currenthly throws an error
 	net_load = (m[:dvGridPurchase][ts]
-		## - sum( m[:dvStorageExport][b,u,ts] for b in p.storage.can_grid_charge, u in p.storage.export_bins)
+		# - sum( m[:dvStorageExport][b,u,ts] for b in p.storage.can_grid_charge, u in p.storage.export_bins)
 		- sum( m[:dvNEMexport][t, ts] for t in p.techs)
 		- sum( m[:dvWHLexport][t, ts]  for t in p.techs)
 		for ts in p.time_steps
 	)
-	results["net_load"] = round.(value.(net_load), digits=3)
+	# results["net_load"] = round.(value.(net_load), digits=3)
 
 	# Report info to track (ADF)
 	## results["storage_export"] = sum( m[:dvStorageExport][b,u,ts] for b in p.storage.can_grid_charge, u in p.storage.export_bins)
@@ -451,6 +451,10 @@ function reopt_results(m::JuMP.AbstractModel, p::REoptInputs)
 	results["cost_ton_NOx"] = p.emissions.cost_ton_NOx
 	results["cost_ton_SO2"] = p.emissions.cost_ton_SO2
 	results["energy_rates"] = p.etariff.energy_rates
+	results["TOU_demand_rates"] = p.etariff.tou_demand_rates
+	results["monthly_demand_rates"] = p.etariff.monthly_demand_rates
+	results["export_rates"] = p.etariff.export_rates
+	results["building_load"] = p.elec_load.loads_kw
 
 	if !isempty(p.pvtechs)
     for t in p.pvtechs

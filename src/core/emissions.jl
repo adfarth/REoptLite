@@ -37,10 +37,8 @@ function Emissions(;
         lib_path = joinpath(dirname(@__FILE__), "..", "..", "data/mers")
         profile_path = joinpath(lib_path, string("p$balancing_authority.csv"))
 
-        # Can use this, requiring importing DataFrame
+        # Import emissions profile for this BA (requires importing DataFrame)
         mers = CSV.File(profile_path, header=1) |> DataFrame
-        # Or this, which might always get warning that CSV is depreciated?
-        # data = CSV.read(profile_path, header=1)
 
         # TODO: add error check for year (must be between 2018 and (2050-analysis years))
         ton_kWh_CO2 = CreateEmissionsMatrix("CO2", mers, year, analysis_years)
