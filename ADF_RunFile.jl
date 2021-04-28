@@ -6,17 +6,17 @@ using CSV, DataFrames
 
 # Scenario file names for BAU and comparison case
 ## bau_file = "aa_LargeOffice_brhc_bau"
-## techs_file = "aa_LargeOffice_brhc_techs"
+techs_file = "outage_ADF"
 
 # Name of saved file
-savename = "TuesTest" # bau_file[1:end-4] # "aa_LargeOffice_brhc_24hr_VoLL100_CLP20_grid_can_charge"
+savename = "outage_ADF" # bau_file[1:end-4] # "aa_LargeOffice_brhc_24hr_VoLL100_CLP20_grid_can_charge"
 
 # Run optimizations (BAU and Investment Case)
 ##m = Model(CPLEX.Optimizer)
 ##results_bau = run_reopt(m, "/Users/amandafarthing1/.julia/dev/REoptLite/test/scenarios/$bau_file.json")
 
 m = Model(CPLEX.Optimizer)
-results_techs = run_reopt(m, "/Users/amandafarthing1/.julia/dev/REoptLite/test/scenarios/Albuquerque_outage/hosp_techs.json") # $techs_file.json")
+results_techs = run_reopt(m, "/Users/amandafarthing1/.julia/dev/REoptLite/test/scenarios/Extras/$techs_file.json") # Albuquerque_outage/hosp_techs.json") # $techs_file.json")
 
 # Save results to csv
 savelist = [
